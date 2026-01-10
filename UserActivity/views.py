@@ -1,6 +1,3 @@
-from django.shortcuts import render
-from autoService.models import Equipment, Box, BookingEquipment, AutoService
-
 from django.forms import modelformset_factory, modelform_factory
 from django.shortcuts import get_object_or_404, render, redirect, get_list_or_404
 from django.contrib.auth.views import LoginView
