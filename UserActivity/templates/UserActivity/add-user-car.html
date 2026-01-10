@@ -1,0 +1,42 @@
+{% extends 'autoService/menu-layout.html' %}
+
+{% load static %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'css/add_user_car.css' %}">
+{% endblock %}
+
+{% block content %}
+<form action="{% url 'add_car' %}" method="POST">
+    {% csrf_token %}
+    <div class="vin">
+        <label for="vin">VIN</label>
+        {{ form.vin }}
+    </div>
+    <div class="make">
+        <label for="make">Марка</label>
+        {{ form.make }}
+    </div>
+    <div class="model">
+        <label for="model">Модель</label>
+        {{ form.model }}
+    </div>
+    <div class="generation">
+        <label for="generation">Поколение</label>
+        {{ form.generation }}
+    </div>
+    <div class="year">
+        <label for="year">Год</label>
+        {{ form.year }}
+    </div>
+    <div class="capacity">
+        <label for="engine_capacity">Объем</label>
+        {{ form.engine_capacity }}
+    </div>
+    <div class="power">
+        <label for="power">Мощность</label>
+        {{ form.power }}
+    </div>
+    <input type="submit" value="Добавить">
+</form>
+{% endblock %}

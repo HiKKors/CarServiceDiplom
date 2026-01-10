@@ -1,0 +1,46 @@
+{% extends 'autoService/menu-layout.html' %}
+{% load static %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Профиль пользователя</h1>
+    <div class="profile-data">
+        <div class="name">
+            <p>Имя: </p>
+        </div>
+        <div class="value">
+            <p>{{ client_data.name }}</p>
+        </div>
+    </div>
+    <div class="profile-data">
+        <div class="surname">
+            <p>Фамилия: </p>
+        </div>
+        <div class="value">
+            <p>{{ client_data.surname }}</p>
+        </div>
+    </div>
+    <div class="profile-data">
+        <div class="email">
+            <p>Эл. почта: </p>
+        </div>
+        <div class="value">
+            <p>{{ client_data.email }}</p>
+        </div>
+    </div>
+    <div class="profile-data">
+        <div class="name">
+            <p>Номер телефона: </p>
+        </div>
+        <div class="value">
+            <p>{{ client_data.phone_number }}</p>
+        </div>
+    </div>
+    <a href="" class="edit-button">Редактировать данные</a>
+    <a href="{% url 'logout' %}" class="logout-button">Выйти</a>
+</div>
+{% endblock %}
