@@ -1,0 +1,187 @@
+.profile-page {
+    padding: 32px;
+    background: #f4f6f9;
+    min-height: 100vh;
+    font-family: Inter, system-ui, sans-serif;
+}
+
+/* Заголовок */
+.profile-header {
+    margin-bottom: 32px;
+}
+
+.profile-header h1 {
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.profile-subtitle {
+    color: #6c757d;
+    margin-top: 6px;
+}
+
+/* Состояние аккаунта */
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+.stat-card {
+    background: #ffffff;
+    padding: 22px;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+.stat-value {
+    display: block;
+    font-size: 32px;
+    font-weight: 600;
+    color: #0d6efd;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+/* Основная сетка */
+.profile-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 32px;
+}
+
+/* Карточка профиля */
+.profile-card {
+    background: #ffffff;
+    padding: 28px;
+    border-radius: 18px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+}
+
+.profile-card h2 {
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+.profile-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid #eef0f2;
+}
+
+.profile-row:last-child {
+    border-bottom: none;
+}
+
+.profile-row span {
+    color: #6c757d;
+}
+
+/* Правая колонка */
+.profile-side {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Главное действие */
+.primary-action {
+    background: #0d6efd;
+    color: #ffffff;
+    text-align: center;
+    padding: 16px;
+    border-radius: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.primary-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(13,110,253,0.35);
+}
+
+/* Последняя активность */
+.last-activity {
+    background: #ffffff;
+    padding: 22px;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+}
+
+.last-activity h3 {
+    margin-bottom: 14px;
+    font-size: 18px;
+}
+
+.activity-card {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 12px;
+}
+
+.activity-title {
+    font-weight: 500;
+}
+
+.activity-meta {
+    font-size: 14px;
+    color: #6c757d;
+    margin: 6px 0;
+}
+
+.activity-status {
+    display: inline-block;
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 999px;
+}
+
+.activity-status.active {
+    background: rgba(13,110,253,0.1);
+    color: #0d6efd;
+}
+
+.activity-status.done {
+    background: rgba(25,135,84,0.1);
+    color: #198754;
+}
+
+.activity-empty {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+/* Кнопки */
+.edit-button {
+    display: block;
+    margin-top: 24px;
+    padding: 14px;
+    text-align: center;
+    border-radius: 12px;
+    background: #f1f3f5;
+    color: #212529;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.logout-button {
+    text-align: center;
+    padding: 14px;
+    border-radius: 12px;
+    background: #f1f3f5;
+    color: #212529;
+    text-decoration: none;
+}
+
+/* Адаптив */
+@media (max-width: 900px) {
+    .profile-layout {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,107 @@
+/* Общие настройки */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+    margin-left: 300px;
+}
+
+h1 {
+    font-size: 24px;
+    margin: 0 0 20px;
+    text-align: left;
+}
+
+/* Контейнер для всех записей */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0;
+}
+
+.columns{
+    display: grid;
+    grid-template-columns: 0.6fr 0.7fr 1fr 1fr 1fr 2fr auto;
+    align-items: center;
+    gap: 5px;
+    padding: 15px 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Стили для записи booking */
+.book {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr 2fr 2fr 2fr auto;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.book:last-child {
+    border-bottom: none;
+}
+
+.date,
+.time,
+.box,
+.service-name,
+.service-address,
+.car {
+    font-size: 14px;
+    color: #495057;
+}
+
+.action {
+    text-align: right;
+}
+
+.action button {
+    margin: 0 5px;
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+/* Кнопки */
+.btn-warning {
+    background-color: #ffc107;
+    color: #fff;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    transition: background-color 0.3s ease;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .column {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 5px;
+    }
+    .book {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 10px;
+    }
+
+    .action {
+        margin-top: 10px;
+    }
+}

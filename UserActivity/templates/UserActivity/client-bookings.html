@@ -1,0 +1,76 @@
+{% extends 'autoService/menu-layout.html' %}
+{% load static %}
+
+{% block styles %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/client_bookings.css' %}">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+{% endblock %}
+
+{% block content %}
+
+<div class="container">
+    <h1>Мои записи</h1>
+    <div class="columns">
+        <div class="date-c">
+            <b>Дата</b>
+        </div>
+        <div class="time-c">
+            <b>Время</b>
+        </div>
+        <div class="box-c">
+            <b>Бокс №</b>
+        </div>
+        <div class="service-name-c" style="margin-right: 15px;">
+            <b>Сервис</b>
+        </div>
+        <div class="address-c">
+            <b>Адрес</b>
+        </div>
+        <div class="car-c">
+            <b>Автомобиль</b>
+        </div>
+        <div class="action-c">
+            <b>Действие</b>
+        </div>
+    </div>
+    {% for booking in user_bookings %}
+        <div class="book">
+            <div class="date">
+                <span>{{ booking.date }}</span>
+            </div>
+            <div class="time">
+                <span>{{ booking.start_time }} - {{ booking.end_time }}</span>
+            </div>
+            <div class="box">
+                <span style="margin-left: 43px;">{{ booking.box.name }}</span>
+            </div>
+            <div class="service-name">
+                <span>{{ booking.service_id.name }}</span>
+            </div>
+            <div class="service-address">
+                <span>{{ booking.service_id.adress }}</span>
+            </div>
+            <div class="car">
+                <span>{{ booking.user_car_id.make }} {{ booking.user_car_id.model }}</span>
+            </div>
+
+            <div class="action">
+                <button class="btn btn-warning btn-sm" th:onclick="'location.href=\'/edit-booking/' + ${booking.id} + '\''">Редактировать</button>
+                <button class="btn btn-danger btn-sm" onclick="confirmDelete(this)">Удалить</button>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    function confirmDelete(button) {
+        if (confirm("Вы уверены, что хотите удалить эту бронь?")) {
+            // Удаление строки
+            var row = button.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+        }
+    }
+</script>
+{% endblock %}
