@@ -1,0 +1,111 @@
+/* Общие стили для страницы */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    margin-left: 300px;
+    padding: 0;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 20px;
+    color: #007bff;
+}
+
+/* Стили формы */
+.add_form {
+    max-width: 650px;
+    margin: 30px auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
+}
+
+.add_form div {
+    margin-bottom: 15px;
+}
+
+/* Стили полей ввода */
+.add_form input[type="text"],
+.add_form input[type="number"] {
+    width: calc(100% - 20px);
+    padding: 8px 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.add_form input[type="text"]:focus,
+.add_form input[type="number"]:focus {
+    border-color: #007bff;
+}
+
+/* Стили заголовков */
+.add_form h3 {
+    margin-top: 20px;
+    color: #555;
+    font-size: 18px;
+}
+
+/* Кнопки */
+.add_form button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.add_form button:hover {
+    background-color: #218838;
+}
+
+.add_form button[type="button"] {
+    margin-left: 5px;
+    background-color: #dc3545;
+}
+
+.add_form button[type="button"]:hover {
+    background-color: #c82333;
+}
+
+/* Стили списка оборудования */
+#equipment-list {
+    margin-top: 10px;
+}
+
+.equipment-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.equipment-item input[type="text"],
+.equipment-item input[type="number"] {
+    flex: 1;
+}
+
+/* Кнопка "Добавить" */
+.add_form input[type="submit"] {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.add_form input[type="submit"]:hover {
+    background-color: #0056b3;
+}

@@ -1,0 +1,59 @@
+body {
+    margin-left: 280px;
+}
+.reviews-column {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 100%;
+    background-color: #f9f9f9;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.reviews-column h2 {
+    margin-top: 0;
+    font-size: 18px;
+    color: #333;
+    text-align: center;
+}
+
+.review {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.review:last-child {
+    margin-bottom: 0;
+}
+
+.review p {
+    margin: 5px 0;
+    color: #555;
+    font-size: 14px;
+}
+
+.review p:first-child {
+    font-weight: bold;
+    color: #333;
+}
+
+.review p:last-child {
+    font-style: italic;
+    color: #777;
+}
+
+.title {
+    display: flex;
+}
+
+.is-open-text{
+    margin-left: 15px;
+    margin-top: 33px;
+}
