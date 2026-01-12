@@ -6,41 +6,93 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Профиль пользователя</h1>
-    <div class="profile-data">
-        <div class="name">
-            <p>Имя: </p>
+<div class="profile-page">
+
+    <!-- Заголовок -->
+    <div class="profile-header">
+        <h1>Профиль пользователя</h1>
+        <p class="profile-subtitle">Состояние аккаунта и последняя активность</p>
+    </div>
+
+    <!-- Состояние аккаунта -->
+    <div class="profile-stats">
+        <div class="stat-card">
+            <span class="stat-value"></span>
+            <span class="stat-label">Активные записи</span>
         </div>
-        <div class="value">
-            <p>{{ client_data.name }}</p>
+        <div class="stat-card">
+            <span class="stat-value"></span>
+            <span class="stat-label">Автомобили</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value"></span>
+            <span class="stat-label">Избранные сервисы</span>
         </div>
     </div>
-    <div class="profile-data">
-        <div class="surname">
-            <p>Фамилия: </p>
+
+    <!-- Основная сетка -->
+    <div class="profile-layout">
+
+        <!-- Профиль -->
+        <div class="profile-card">
+            <h2>Личные данные</h2>
+
+            <div class="profile-row">
+                <span>Имя</span>
+                <strong>{{ client_data.name }}</strong>
+            </div>
+            <div class="profile-row">
+                <span>Фамилия</span>
+                <strong>{{ client_data.surname }}</strong>
+            </div>
+            <div class="profile-row">
+                <span>Эл. почта</span>
+                <strong>{{ client_data.email }}</strong>
+            </div>
+            <div class="profile-row">
+                <span>Телефон</span>
+                <strong>{{ client_data.phone_number }}</strong>
+            </div>
+
+            <a href="#" class="edit-button">
+                Редактировать данные
+            </a>
         </div>
-        <div class="value">
-            <p>{{ client_data.surname }}</p>
+
+        <!-- Правая колонка -->
+        <div class="profile-side">
+
+            <!-- Главное действие -->
+            <a href="{% url 'main' %}" class="primary-action">
+                Записаться в сервис
+            </a>
+
+            <!-- Последняя активность -->
+            <div class="last-activity">
+                <h3>Последняя активность</h3>
+
+                {% if last_activity %}
+                    <div class="activity-card">
+                        <p class="activity-title">
+                            <!-- {{ last_activity.service_name }} -->
+                        </p>
+                        <p class="activity-meta">
+                            <!-- {{ last_activity.date }} • {{ last_activity.time }} -->
+                        </p>
+                        <span class="">  <!-- activity-status {{ last_activity.status }} -->
+                            <!-- {{ last_activity.status_label }} -->
+                        </span>
+                    </div>
+                {% else %}
+                    <p class="activity-empty">
+                        У вас пока нет активности
+                    </p>
+                {% endif %}
+            </div>
+
+            <a href="{% url 'logout' %}" class="logout-button">Выйти</a>
         </div>
+
     </div>
-    <div class="profile-data">
-        <div class="email">
-            <p>Эл. почта: </p>
-        </div>
-        <div class="value">
-            <p>{{ client_data.email }}</p>
-        </div>
-    </div>
-    <div class="profile-data">
-        <div class="name">
-            <p>Номер телефона: </p>
-        </div>
-        <div class="value">
-            <p>{{ client_data.phone_number }}</p>
-        </div>
-    </div>
-    <a href="" class="edit-button">Редактировать данные</a>
-    <a href="{% url 'logout' %}" class="logout-button">Выйти</a>
 </div>
 {% endblock %}
