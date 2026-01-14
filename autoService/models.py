@@ -1,11 +1,14 @@
+from datetime import datetime, timedelta
 from django.db import models
+from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
+from accounts.models import Client
 
-REASONS = [
-    (1, 'Ремонтные работы')
-    (2, 'Проблемы с оборудованием'),
-    (3, 'Другое')
-]
+# REASONS = [
+#     (1, 'Ремонтные работы')
+#     (2, 'Проблемы с оборудованием'),
+#     (3, 'Другое')
+# ]
 
 
 class WeekDays(models.Model):
@@ -16,7 +19,7 @@ class WeekDays(models.Model):
 
 class AutoService(models.Model):
     id = models.AutoField(primary_key=True)
-    admin = models.ForeignKey(to='accounts.ServiceAdmin', on_delete=models.CASCADE)
+    owner = models.ForeignKey(to='accounts.Client', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     description = models.TextField(max_length=500)
     address = models.CharField(max_length=100)
@@ -41,7 +44,7 @@ class Box(models.Model):
     service_id = models.ForeignKey(to='AutoService', on_delete=models.CASCADE)
     is_opened = models.BooleanField(default=True)
     
-    reason_is_closed = models.CharField(_('reason_type'), choices=REASONS, max_length=256, blank=True)
+    # reason_is_closed = models.CharField(_('reason_type'), choices=REASONS, max_length=256, blank=True)
     
     def __str__(self):
         return f'Сервис {self.service_id} | {self.name}'
@@ -51,7 +54,7 @@ class Booking(models.Model):
     id = models.AutoField(primary_key=True)
     service_id = models.ForeignKey(to='AutoService', on_delete=models.CASCADE)
     user_id = models.ForeignKey(to='accounts.Client', on_delete=models.CASCADE)
-    user_car_id = models.ForeignKey(to='user.UserCar', on_delete=models.CASCADE)
+    # user_car_id = models.ForeignKey(to='user.UserCar', on_delete=models.CASCADE, null=True, blank=True)
     date = models.CharField(max_length=100)
     start_time = models.TimeField()
     end_time = models.TimeField()
@@ -61,7 +64,40 @@ class Booking(models.Model):
     box = models.ForeignKey(to='Box', on_delete=models.CASCADE)
     
     comment = models.TextField(max_length=500)
-    total_price = models.IntegerField(default=0)    
+    total_price = models.IntegerField(default=0)  
+    
+    class BookStatus(models.TextChoices):
+        PENDING = 'pending', 'Ожидает'
+        ACTIVE = 'active', 'Активная'
+        COMPLETED = 'completed', 'Завершена'
+        MISSED = 'missed', 'Пропущена'
+    
+    status = models.CharField(max_length=20, choices=BookStatus.choices, default=BookStatus.PENDING)
+    
+    arrived_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    has_penalty = models.BooleanField(default=False)
+    
+    def mark_arrived(self):
+        now = datetime.now()
+        book_date = datetime.strptime(self.date, "%Y-%m-%d").date()
+        start_dt = datetime.combine(book_date, self.start_time)
+        print(now)
+        print('разница во времени', start_dt - timedelta(minutes=15))
+        
+        if now < start_dt - timedelta(minutes=15):
+            raise ValidationError(
+                "Слишком рано: можно отметить прибытие за 15 минут до начала"
+            )
+
+        if now > start_dt + timedelta(minutes=30):
+            self.has_penalty = True
+            self.status = self.BookStatus.MISSED
+        else:
+            self.status = self.BookStatus.ACTIVE
+            self.arrived_at = now
+
+        self.save()
     
     def __str__(self):
         return f'Сервис {self.service_id} | Клиент {self.user_id} | {self.date}'
