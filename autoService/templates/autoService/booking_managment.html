@@ -1,0 +1,22 @@
+{% extends "autoService/menu-layout.html" %}
+
+{% block title %}Бронь{% endblock %}
+<!-- добавить таймер, сделать изменение кнопки -->
+{% block content %}
+    <h1>Бронь от:</h1>
+    <p>Дата: {{ booking_data.date }}</p>
+    <p>Время: {{ booking_data.start_time }} - {{ booking_data.end_time }}</p>
+    <form action="{% url 'mark_arrived' booking_data.id %}" method="post">
+        {% csrf_token %}
+        
+        {% if booking_data.status == 'pending' %}
+        <input type="submit" value="На месте">
+        {% elif booking_data.status == 'active' %} 
+        <input type="submit" value="Завершить работу">
+        {% elif booking_data.status == 'completed' %} 
+        <p>Бронь закрыта</p><a href="{% url 'main' }" class="btn">На главную</a>
+        {% elif booking_data.status == 'missed' %} 
+        <p>Бронь закрыта</p><a href="{% url 'main' %}" class="btn">На главную</a>
+        {% endif %}
+    </form>
+{% endblock %}

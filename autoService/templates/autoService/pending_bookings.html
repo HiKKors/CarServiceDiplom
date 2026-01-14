@@ -1,0 +1,14 @@
+{% extends 'autoService/menu-layout.html' %}
+
+{% block title %}Ожидаемые бронирования{% endblock %}
+
+{% block content %}
+<h1>Ожидаемые бронированиия</h1>
+{% for booking in pending_bookings %}
+<div class="book_card" style="border-style: outset;">
+    <p>Бронь в "{{ booking.service_id.name }}"</p>
+    <p>{{ booking.date }}</p>
+    <p>{{ booking.start_time }} - {{ booking.end_time }}</p>
+</div>
+{% endfor %}
+{% endblock %}

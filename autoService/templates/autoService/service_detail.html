@@ -1,0 +1,42 @@
+{% extends 'autoService/menu-layout.html' %}
+{% load static %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'css/service_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="title">
+    <div class="name">
+        <h1>{{ service.name }}</h1>
+    </div>
+    <div class="is-open">
+        {% if is_open %}
+            <h3 class="is-open-text" style="color: green;">Открыто</h3>
+        {% else %}
+            <h3 class="is-open-text" style="color: red;">Закрыто</h3>
+        {% endif %}
+    </div>
+</div>
+<div class="description">
+    <span>{{ service.description }}</span>
+</div>
+{% for equipment in equipment_list %}
+<div class="equipments">
+    <p text="${equipment.name} + ' - ' + ${equipment.price} + ' руб/час'">{{ equipment.name }} - {{ equipment.price }} руб/час</p>
+</div>
+{% endfor %}
+<a href="{% url 'create_booking' service.id %}">Выбрать дату</a>
+<div class="reviews-column">
+    <h2>Отзывы</h2>
+    <a href="">Оставить отзыв</a>
+    {% for review in reviews %}
+    <div class="review">
+        <p class="review-date">{{ review.date|date:"d.m.Y" }}</p>
+        <p class="review-mark">Оценка: {{ review.mark }}</p>
+        <p class="review-user"> {{ review.user.name }} {{ review.user.surname }}</p>
+        <p class="review-comment">{{ review.comment }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
