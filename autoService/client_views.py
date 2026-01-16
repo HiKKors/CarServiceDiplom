@@ -10,6 +10,7 @@ from .forms import BookingForm, BookingMainDetailForm, BookingSparePartForm, Boo
 from .filters import ServiceFilterForm
 
 from django.forms import modelformset_factory
+from django.core.exceptions import ValidationError
 
 import datetime
 
@@ -239,20 +240,40 @@ class PendingBookings(ListView):
         return context
         
         
+# @login_required
 def mark_arrived(request, booking_id):
-    booking = get_object_or_404(Booking, id=booking_id, user_id=request.user)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Только POST запросы разрешены'}, status=405)
+    
+    booking = get_object_or_404(Booking, id=booking_id, user_id=request.user.id)
     
     try:
         booking.mark_arrived()
-        return JsonResponse({'status': 'ok', 'new_status': booking.status}, json_dumps_params={"ensure_ascii": False})
+        logger.info(f"Пользователь {request.user.email} отметил прибытие по брони {booking_id}")
+        return JsonResponse({'status': 'ok', 'new_status': booking.status})
+    except ValidationError as e:
+        error_message = e.message if isinstance(e.message, str) else e.message[0]
+        logger.warning(f"Ошибка при отметке прибытия: {error_message}")
+        return JsonResponse({'error': str(error_message)}, status=400)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400, json_dumps_params={"ensure_ascii": False})
+        logger.error(f"Неожиданная ошибка: {e}")
+        return JsonResponse({'error': 'Внутренняя ошибка сервера'}, status=500)
 
 # @login_required
 def mark_completed(request, booking_id):
-    booking = get_object_or_404(Booking, id=booking_id, client=request.user)
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Только POST запросы разрешены'}, status=405)
+    
+    booking = get_object_or_404(Booking, id=booking_id, user_id=request.user.id)
+    
     try:
         booking.mark_completed()
-        return JsonResponse({'status': 'ok'}, json_dumps_params={"ensure_ascii": False})
+        logger.info(f"Пользователь {request.user.email} завершил бронь {booking_id}")
+        return JsonResponse({'status': 'ok'})
+    except ValidationError as e:
+        error_message = e.message if isinstance(e.message, str) else e.message[0]
+        logger.warning(f"Ошибка при завершении брони: {error_message}")
+        return JsonResponse({'error': str(error_message)}, status=400)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400, json_dumps_params={"ensure_ascii": False})
+        logger.error(f"Неожиданная ошибка: {e}")
+        return JsonResponse({'error': 'Внутренняя ошибка сервера'}, status=500)
