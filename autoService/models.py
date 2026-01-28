@@ -48,9 +48,9 @@ class AutoService(models.Model):
         for book in bookings:
             for slot in time_slots:
                 slot_hour = int(slot.split(':')[0])
-                slot_start = datetime.combine(target_date, time(slot_hour, 0))
+                slot_start = time(slot_hour, 0)
                 print(f'{slot_start} + {timezone}')
-                slot_end = slot_start + timedelta(hours=1)
+                slot_end = time((slot_hour + 1) % 24, 0)
                 
                 if book.start_time < slot_end and book.end_time > slot_start:
                     table[book.box_id][slot] = 'busy'
