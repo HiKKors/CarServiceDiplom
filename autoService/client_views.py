@@ -86,21 +86,10 @@ class ServiceDetail(DetailView):
         return context
     
 def create_booking(request, service_id):
-    # возможно стоит сделать еще одну модель для отслеживания занятых и свободных часов
-    
-    bookings_by_date = Booking.objects.filter(date = '2025-09-09')
-    # print(bookings_by_date)
-    for booking in bookings_by_date:
-        print(booking.start_time)
-    
-    times = {}
-    
-    for i in range(24):
-        times[i] = False
-        
-    
-    
+    service = get_object_or_404(AutoService, id=service_id)
+
     if request.method == 'POST':
+        print('POST')
         booking_form = BookingForm(request.POST)
         booking_equipment = BookingEquipment()
 
@@ -134,22 +123,38 @@ def create_booking(request, service_id):
                 booking_equipment.save()
 
             # return redirect('/%2Fadd_booking_detail', booking_id = booking.id)
-            return redirect(f'/%2Fcreate-booking/{service_id}/add_booking_detail/{booking.id}')
+            return redirect(f'/create-booking/{service_id}/add_booking_detail/{booking.id}')
     else:
         booking_form = BookingForm()
         
         # booking_form.fields['user_car_id'].queryset = UserCar.objects.filter(user = request.user)
         booking_form.fields['box'].queryset = Box.objects.filter(service_id = service_id)
-        booking_form.fields['box'].name = 'box'
+        # booking_form.fields['box'].name = 'box'
         
         booking_form.fields['equipment'].queryset = Equipment.objects.filter(service_id = service_id)
         # задаем имя оборудования для шаблона
-        booking_form.fields['equipment'].name = 'equipment'
+        # booking_form.fields['equipment'].name = 'equipment'
+        
+        availability_data = None
+        selected_date = request.GET.get('date')
+        
+        if selected_date:
+            try:
+                target_date = timezone.datetime.strptime(selected_date, '%Y-%m-%d').date()
+                availability_data = service.get_availability_for_date(target_date)
+            except ValueError:
+                pass
         
         # print(booking_form.equipment)
         
     
-    return render(request, 'autoService/create-booking.html', {'form': booking_form, 'service_id': service_id})
+    return render(request, 'autoService/create-booking.html', {
+        'form': booking_form, 
+        'service_id': service_id,
+        'availability_data': availability_data,
+        'selected_date': selected_date or timezone.now().date().isoformat()
+        
+    })
 
 def add_booking_detail(request, service_id, booking_id):
     booking = Booking.objects.get(id = booking_id)
@@ -277,3 +282,84 @@ def mark_completed(request, booking_id):
     except Exception as e:
         logger.error(f"Неожиданная ошибка: {e}")
         return JsonResponse({'error': 'Внутренняя ошибка сервера'}, status=500)
+    
+    
+    
+    
+    
+    
+#test
+from django.http import JsonResponse
+from django.utils import timezone
+# from datetime import datetime, timedelta
+from .models import Box, Booking
+
+def get_boxes(request):
+    print('get_boxes')
+    service_id = request.GET.get('service_id')
+    if not service_id:
+        return JsonResponse({'error': 'service_id required'}, status=400)
+    
+    boxes = Box.objects.filter(service_id=service_id).values('id', 'name')
+    return JsonResponse(list(boxes), safe=False)
+
+def get_available_times(request):
+    print('доступное время')
+    box_id = request.GET.get('box_id')
+    # date_str = request.GET.get('date')  # формат: YYYY-MM-DD
+    
+    if not box_id:
+        return JsonResponse({'error': 'box_id and date required'}, status=400)
+    
+    # try:
+    #     date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    #     if date < timezone.now().date():
+    #         return JsonResponse({'error': 'Нельзя выбрать прошедшую дату'}, status=400)
+    # except ValueError:
+    #     return JsonResponse({'error': 'Неверный формат даты'}, status=400)
+    
+    # Получаем все брони для этого бокса на эту дату
+    bookings = Booking.objects.filter(
+        box_id=box_id,
+        # start_time__date=date
+    ).values('start_time', 'end_time')
+    
+    # Преобразуем в удобный формат
+    busy_intervals = []
+    for b in bookings:
+        busy_intervals.append((b['start_time'], b['end_time']))
+    
+    # Генерируем слоты (например, с 9:00 до 20:00, по 1 часу)
+    slots = []
+    work_start = 9
+    work_end = 20
+    duration = 60  # минут
+    
+    # current = datetime.combine(date, datetime.min.time()).replace(hour=work_start)
+    # end_of_day = datetime.combine(date, datetime.min.time()).replace(hour=work_end)
+    
+    # while current + timedelta(minutes=duration) <= end_of_day:
+    #     slot_start = current
+    #     slot_end = current + timedelta(minutes=duration)
+        
+    #     # Проверяем, пересекается ли слот с занятым временем
+    #     is_free = True
+    #     for busy_start, busy_end in busy_intervals:
+    #         if slot_start < busy_end and slot_end > busy_start:
+    #             is_free = False
+    #             break
+        
+    #     if is_free:
+    #         slots.append({
+    #             'start': slot_start.strftime('%H:%M'),
+    #             'end': slot_end.strftime('%H:%M')
+    #         })
+        
+    #     current += timedelta(minutes=30)  # шаг 30 мин (можно менять)
+    
+    return JsonResponse({'slots': slots})
+
+
+    
+
+
