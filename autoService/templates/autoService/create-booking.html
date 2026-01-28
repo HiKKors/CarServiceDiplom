@@ -1,72 +1,228 @@
 {% extends 'autoService/menu-layout.html' %}
 {% load static %}
+{% load dict_extras %}
+{% load json_extras %}
 
 {% block styles %}
 <link rel="stylesheet" href="{% static 'css/create_booking.css' %}">
+<style>
+.availability-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+.availability-table th, .availability-table td { padding: 8px; text-align: center; border: 1px solid #ddd; }
+.slot-free { background: #d4edda; cursor: pointer; }
+.slot-busy { background: #f8d7da; color: #721c24; }
+.slot-selected { background: #ffc107; font-weight: bold; }
+.box-label { background: #e9ecef; font-weight: bold; }
+</style>
 {% endblock %}
 
 {% block content %}
-<form action="{% url 'create_booking' service_id %}" method="POST">
+<form id="booking-form" method="POST">
     {% csrf_token %}
-    <label for="date">Дата:</label>
-    {{ form.date }}
+    
+    <!-- Скрытые поля для отправки -->
+    <input type="hidden" name="box" id="selected-box">
+    <input type="hidden" name="start_time" id="selected-start-time">
+    <input type="hidden" name="end_time" id="selected-end-time">
 
-    <label for="start-time">Начало брони:</label>
-    {{ form.start_time }}
+    <!-- Выбор даты -->
+    <label>Дата:</label>
+    <input type="date" name="date" value="{{ selected_date }}" min="{{ today }}">
+    <button type="button" onclick="showAvailability()">
+        Показать доступность
+    </button>
 
-    <label for="end-time">Конец брони:</label>
-    {{ form.end_time }}
+    <!-- Таблица (если есть данные) -->
+    {% if availability_data %}
+    <div style="margin: 20px 0;">
+        <h3>Доступные слоты:</h3>
+        <table class="availability-table">
+            <thead>
+                <tr>
+                    <th>Бокс</th>
+                    {% for slot in availability_data.time_slots %}
+                        <th>{{ slot }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for box in availability_data.boxes %}
+                <tr>
+                    <td class="box-label">Бокс {{ box.name }}</td>
+                    {% for slot in availability_data.time_slots %}
+                        {% with status=availability_data.table|get_item:box.id|get_item:slot %}
+                        <td 
+                            class="slot-{{ status }}"
+                            data-box-id="{{ box.id }}"
+                            data-start-time="{{ slot }}"
+                            {% if status == 'free' %}
+                                onclick="selectSlot({{ box.id }}, '{{ slot }}')"
+                            {% endif %}
+                        >
+                            {% if status == 'free' %}🚗{% elif status == 'busy' %}⛔{% endif %}
+                        </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 
-    <label for="car">Автомобиль:</label>
+    <!-- Остальные поля формы -->
+    <label>Автомобиль:</label>
     {{ form.user_car_id }}
 
-    <label for="box">Бокс:</label>
-    {{ form.box }}
-
-    <label for="comments">Комментарии:</label>
+    <label>Комментарии:</label>
     {{ form.comment }}
 
-    <label for="equipment">Оборудование:</label>
+    <label>Оборудование:</label>
     {{ form.equipment }}
 
     <div>
-        <p>Итоговая цена: <span id="total-price" name="total-price">0</span> руб</p>
+        <p>Итоговая цена: <span id="total-price">0</span> руб</p>
     </div>
 
     <button type="submit">Забронировать</button>
 </form>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const startTimeInput = document.getElementById('start-time');
-        const endTimeInput = document.getElementById('end-time');
-        const equipmentCheckboxes = document.querySelectorAll('[name="equipment"]');
-        const totalPriceElement = document.getElementById('total-price');
+// === Обработка выбора слотов ===
+let currentSelection = {
+    boxId: null,
+    startSlot: null,
+    endSlot: null
+};
 
-        function calculateTotalPrice() {
-            const startTime = startTimeInput.value;
-            const endTime = endTimeInput.value;
+// Передаём данные только если таблица существует
+{% if availability_data %}
+const TIME_SLOTS = {{ availability_data.time_slots|to_json }};
+{% else %}
+const TIME_SLOTS = [];
+{% endif %}
 
-            if (!startTime || !endTime) return;
+function getSlotIndex(slot) {
+    return TIME_SLOTS.indexOf(slot);
+}
 
-            const start = new Date(`1970-01-01T${startTime}:00`);
-            const end = new Date(`1970-01-01T${endTime}:00`);
-            const hours = (end - start) / (1000 * 60 * 60);
+function clearAllSelection() {
+    document.querySelectorAll('.slot-selected').forEach(el => {
+        el.classList.remove('slot-selected');
+    });
+    currentSelection = { boxId: null, startSlot: null, endSlot: null };
+    updateFormFields();
+}
 
-            let total = 0;
-            equipmentCheckboxes.forEach(checkbox => {
-                if (checkbox.checked) {
-                    const price = parseInt(checkbox.nextElementSibling.textContent.match(/(\d+)/)[1], 10);
-                    total += price * hours;
-                }
-            });
+function selectSlot(boxId, slotTime) {
+    console.log(slotTime);
+    const cell = event.target;
+    if (!cell.classList.contains('slot-free')) return;
 
-            totalPriceElement.textContent = total;
+    // Случай 1: первый выбор или другой бокс
+    if (currentSelection.boxId === null || currentSelection.boxId !== boxId) {
+        clearAllSelection();
+        currentSelection = { boxId, startSlot: slotTime, endSlot: slotTime };
+        cell.classList.add('slot-selected');
+        updateFormFields();
+        return;
+    }
+
+    // Случай 2: тот же бокс
+    const newSlotIndex = getSlotIndex(slotTime);
+    const startSlotIndex = getSlotIndex(currentSelection.startSlot);
+    console.log("startSlotIndex", startSlotIndex);
+    console.log("newSlotIndex", newSlotIndex);
+
+    if (newSlotIndex < startSlotIndex) {
+        console.log("newSlotIndex < startSlotIndex, СБРОС");
+        // Раньше начального → сброс
+        clearAllSelection();
+        currentSelection = { boxId, startSlot: slotTime, endSlot: slotTime };
+        cell.classList.add('slot-selected');
+    } else {
+        console.log("newSlotIndex >= startSlotIndex, ДИАПАЗОН");
+        // Позже или равно → диапазон
+        currentSelection.endSlot = slotTime;
+        // Перерисовка
+        
+        const startIndex = getSlotIndex(currentSelection.startSlot);
+        const endIndex = getSlotIndex(currentSelection.endSlot);
+        
+        for (let i = startIndex; i <= endIndex; i++) {
+            const time = TIME_SLOTS[i];
+            const selector = `.slot-free[data-box-id="${boxId}"][data-start-time="${time}"]`;
+            const targetCell = document.querySelector(selector);
+            if (targetCell) targetCell.classList.add('slot-selected');
+        }
+    }
+    updateFormFields();
+}
+
+function updateFormFields() {
+    const boxInput = document.getElementById('selected-box');
+    const startInput = document.getElementById('selected-start-time');
+    const endInput = document.getElementById('selected-end-time');
+
+    if (currentSelection.startSlot && currentSelection.endSlot) {
+        boxInput.value = currentSelection.boxId;
+        startInput.value = currentSelection.startSlot;
+        
+        // Конец = последний слот + 1 час
+        const [hour, min] = currentSelection.endSlot.split(':').map(Number);
+        const endHour = (hour + 1) % 24;
+        endInput.value = `${endHour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+    } else {
+        boxInput.value = '';
+        startInput.value = '';
+        endInput.value = '';
+    }
+}
+
+// === Расчёт цены ===
+document.addEventListener('DOMContentLoaded', function() {
+    function calculateTotalPrice() {
+        const startTime = document.getElementById('selected-start-time').value;
+        const endTime = document.getElementById('selected-end-time').value;
+        
+        if (!startTime || !endTime) {
+            document.getElementById('total-price').textContent = '0';
+            return;
         }
 
-        startTimeInput.addEventListener('change', calculateTotalPrice);
-        endTimeInput.addEventListener('change', calculateTotalPrice);
-        equipmentCheckboxes.forEach(checkbox => checkbox.addEventListener('change', calculateTotalPrice));
+        const start = new Date(`1970-01-01T${startTime}:00`);
+        const end = new Date(`1970-01-01T${endTime}:00`);
+        const hours = (end - start) / (1000 * 60 * 60);
+
+        let total = 0;
+        // Исправлено: querySelectorAll вместо getElementById
+        document.querySelectorAll('input[name="equipment"]').forEach(checkbox => {
+            if (checkbox.checked) {
+                // Ищем цену в соседнем элементе (label)
+                const label = checkbox.nextElementSibling;
+                if (label) {
+                    const match = label.textContent.match(/(\d+)\s*руб/);
+                    if (match) {
+                        total += parseInt(match[1]) * hours;
+                    }
+                }
+            }
+        });
+
+        document.getElementById('total-price').textContent = Math.round(total);
+    }
+
+    // Слушатели для оборудования
+    document.querySelectorAll('input[name="equipment"]').forEach(checkbox => {
+        checkbox.addEventListener('change', calculateTotalPrice);
     });
+});
+
+// === Кнопка "Показать доступность" ===
+function showAvailability() {
+    const date = document.querySelector('[name="date"]').value;
+    if (date) {
+        window.location.href = `?date=${encodeURIComponent(date)}`;
+    }
+}
 </script>
 {% endblock %}
