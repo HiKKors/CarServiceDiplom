@@ -49,7 +49,6 @@ class AutoService(models.Model):
             for slot in time_slots:
                 slot_hour = int(slot.split(':')[0])
                 slot_start = time(slot_hour, 0)
-                print(f'{slot_start} + {timezone}')
                 slot_end = time((slot_hour + 1) % 24, 0)
                 
                 if book.start_time < slot_end and book.end_time > slot_start:
@@ -157,3 +156,9 @@ class BookingEquipment(models.Model):
     booking_id = models.ForeignKey(to='Booking', on_delete=models.CASCADE)
     equipment_id = models.ForeignKey(to='Equipment', on_delete=models.CASCADE)
     
+class Staff(models.Model):
+    specialist_id = models.AutoField(primary_key=True)
+    service = models.ForeignKey(to='AutoService', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, null=False, blank=False)
+    surname = models.CharField(max_length=100, null=False, blank=False)
+    salary = models.IntegerField(default=0)
