@@ -1,0 +1,16 @@
+{% extends 'autoService/menu-layout.html' %}
+
+{% block styles %}
+
+{% endblock %}
+
+{% block content %}
+<h2>Выберите автосервис</h2>
+<ul>
+{% for service in services %}
+    <li>
+        <a href="{% url 'my_staff' service.id %}">{{ service.name }}</a>
+    </li>
+{% endfor %}
+</ul>
+{% endblock %}
