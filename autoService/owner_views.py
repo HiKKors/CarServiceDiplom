@@ -15,6 +15,8 @@ from autoService.models import Box, Equipment, AutoService, Booking, Staff
 from UserActivity.models import Review
 from .forms import AddAutoServiceDataForm, EquipmentFormSet, BoxForm, EquipmentForm, AddStaffForm
 
+from .filters import AllBookingsFilterForm
+
 import logging
 
 logging.basicConfig(
@@ -231,22 +233,27 @@ class EditAutoServiceView(TemplateView):
     
     
 class AllBookingsView(ListView):
-    queryset = Booking.objects.all()
+    model = Booking
     template_name = 'admin_templates/all_bookings.html'
+    context_object_name = 'all_bookings'
     
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = Booking.objects.filter(service_id__owner=self.request.user)
         
-        admin_services = AutoService.objects.filter(admin = self.request.user)
-        services_id = [i.id for i in admin_services]
-        bookings = Booking.objects.filter(service_id__in=services_id)
+        self.filterset = AllBookingsFilterForm(self.request.GET, queryset=qs)
+        if self.filterset.is_valid():
+            filtered_qs = self.filterset.qs
+        else:
+            filtered_qs = self.queryset
         
-        return bookings
+        logger.info(f'Фильтр {self.request.GET}, найдено: {filtered_qs.count()} совпадений')
+        
+        return self.filterset.qs
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        context['all_bookings'] = self.get_queryset()
+    
+        context['form'] = self.filterset.form
         
         return context
     
