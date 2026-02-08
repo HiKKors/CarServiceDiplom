@@ -1,0 +1,94 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block title %}
+    {% endblock title %}
+    <link rel="stylesheet" href="{% static 'css/menu.css' %}">
+    {% block styles %}
+    {% endblock %}
+    {% block scripts %}
+    {% endblock %}
+</head>
+<body>
+<div>
+    <nav class="main-menu">
+        <ul>
+            <li>
+                {% if user.is_admin %}
+                <a href="{% url 'my_services' %}">
+                    <i class="fa fa-list fa-2x" aria-hidden="true"></i>
+                    <span class="nav-text">Мои автосервисы</span>
+                </a>
+                {% else %}
+                <a href="{% url 'main' %}">
+                    <i class="fa fa-list fa-2x" aria-hidden="true"></i>
+                    <span class="nav-text">Список автосервисов</span>
+                </a>
+                {% endif %}
+            </li> 
+            {% if not user.is_admin and active_bookings %}
+            <li class="has-subnav">
+                <a href="{% url 'pending_bookings' %}">
+                    <i class="fa fa-calendar fa-2x"></i>
+                    <span class="nav-text">Предстоящие записи</span>
+                </a>
+            </li>
+            {% endif %}
+            <li class="has-subnav">
+                {% if user.is_admin %}
+                <a href="{% url 'all_bookings' %}">
+                    <i class="fa fa-calendar fa-2x"></i>
+                    <span class="nav-text">Управление бронированиями</span>
+                </a>
+                {% else %}
+                <a href="{% url 'my_bookings' %}">
+                    <i class="fa fa-calendar fa-2x"></i>
+                    <span class="nav-text">Мои записи</span>
+                </a>
+                {% endif %}
+            </li>
+            <li class="has-subnav">
+                {% if user.is_admin %}
+                <a href="{% url 'garage' %}">
+                    <i class="fa fa-car fa-2x" aria-hidden="true"></i>
+                    <span class="nav-text">Мой гараж</span>
+                </a>
+                {% else %}
+                <a href="{% url 'garage' %}">
+                    <i class="fa fa-car fa-2x" aria-hidden="true"></i>
+                    <span class="nav-text">Мой гараж</span>
+                </a>
+                {% endif %}
+            </li>
+            
+            <li>
+                <a href="{% url 'profile' user.id %}">
+                    <i class="fa fa-user fa-2x" aria-hidden="true"></i>
+                    <span class="nav-text">Профиль</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="logout-btn">
+            <ul>
+                <li>
+                    <form action="#" method="post">
+                        {% csrf_token %}
+                        <a href="{% url 'logout' %}">
+                            <i class="fa fa-sign-out fa-2x" aria-hidden="true"></i>
+                            <span class="nav-text">Выйти</span>
+                        </a>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+</div>
+
+</body>

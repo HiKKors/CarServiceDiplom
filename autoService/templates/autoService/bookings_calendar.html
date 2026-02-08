@@ -1,0 +1,169 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Календарь бронирований</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f5f7;
+        }
+        .calendar-container {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 320px;
+            background: white;
+            padding: 20px;
+            border-right: 1px solid #ddd;
+        }
+        .calendar {
+            flex-grow: 1;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            margin: 20px;
+        }
+        .right-sidebar {
+            width: 320px;
+            background: white;
+            padding: 20px;
+            border-left: 1px solid #ddd;
+        }
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .calendar-nav button {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #333;
+        }
+        .calendar-nav button:hover {
+            color: #007bff;
+        }
+        .time-slot {
+            height: 60px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+        }
+        .employee-column {
+            flex-grow: 1;
+            border-left: 1px solid #ddd;
+            position: relative;
+        }
+        .booking {
+            position: absolute;
+            width: 90%;
+            left: 5%;
+            padding: 8px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .booking:hover .tooltip {
+            display: block;
+        }
+        .tooltip {
+            display: none;
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 12px;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        .orange { background-color: #f4a261; }
+        .purple { background-color: #9b5de5; }
+        .red { background-color: #e63946; }
+        .employee-menu {
+            margin-bottom: 20px;
+        }
+        .calendar-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .datepicker {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid calendar-container">
+        <div class="sidebar">
+            <h2 class="calendar-title">Автосервис "АвтоМастер"</h2>
+            <h4>Сотрудники</h4>
+            <ul class="list-group employee-menu">
+                <li class="list-group-item">Николай Степанов</li>
+                <li class="list-group-item">Елена Калинина</li>
+                <li class="list-group-item">Сергей Иванов</li>
+            </ul>
+        </div>
+        <div class="calendar">
+            <div class="calendar-header">
+                <div class="calendar-nav">
+                    <button id="prevDay"><i class="fas fa-chevron-left"></i></button>
+                    <h2 id="currentDate">Июнь 1</h2>
+                    <button id="nextDay"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <button class="btn btn-primary">Новая запись</button>
+            </div>
+            <div class="d-flex">
+                <div class="time-column" style="width: 100px;">
+                    <div class="time-slot">10:00</div>
+                    <div class="time-slot">11:00</div>
+                    <div class="time-slot">12:00</div>
+                    <div class="time-slot">15:00</div>
+                    <div class="time-slot">17:00</div>
+                    <div class="time-slot">18:00</div>
+                </div>
+                <div class="employee-column">
+                    <div class="booking orange" style="top: 0; height: 60px;">
+                        Николай Степанов
+                        <div class="tooltip">Автомобиль: Toyota Camry<br>Услуга: Замена масла</div>
+                    </div>
+                </div>
+                <div class="employee-column">
+                    <div class="booking orange" style="top: 60px; height: 60px;">
+                        Елена Калинина
+                        <div class="tooltip">Автомобиль: BMW X5<br>Услуга: Диагностика</div>
+                    </div>
+                    <div class="booking purple" style="top: 180px; height: 60px;">
+                        Елена Калинина
+                        <div class="tooltip">Автомобиль: Audi A6<br>Услуга: Шиномонтаж</div>
+                    </div>
+                    <div class="booking red" style="top: 300px; height: 60px;">
+                        Елена Калинина
+                        <div class="tooltip">Автомобиль: Mercedes C-class<br>Услуга: Ремонт подвески</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="right-sidebar">
+            <h3>Календарь</h3>
+            <input type="date" class="form-control datepicker">
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,68 @@
+{% extends "autoService/menu-layout.html" %}
+
+{% block title %}
+<meta charset="utf-8">
+<title>Управление бронью</title>
+{% endblock %}
+{% block styles %}
+<script src="/static/autoService/js/booking.js" defer></script>
+<style>
+    .btn { padding: 10px 20px; margin: 5px; border: none; cursor: pointer; }
+    .btn-primary { background: #007bff; color: white; }
+    .btn-success { background: #28a745; color: white; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .alert { padding: 10px; margin: 10px 0; border-radius: 4px; }
+    .alert-error { background: #f8d7da; color: #721c24; }
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-active { background: #d1ecf1; color: #0c5460; }
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-missed { background: #f8d7da; color: #721c24; }
+</style>
+{% endblock %}
+<!-- добавить таймер, сделать изменение кнопки -->
+{% block content %}
+    <h1>Бронирование #{{ booking_data.id }}</h1>
+    
+    <p><strong>Автосервис:</strong> {{ booking_data.service_id }}</p>
+    <p><strong>Бокс:</strong> {{ booking_data.box }}</p>
+    <p><strong>Дата:</strong> {{ booking_data.date }}</p>
+    <p><strong>Время:</strong> 
+        {{ booking_data.start_time|date:"H:i" }} – {{ booking_data.end_time|date:"H:i" }}
+    </p>
+
+    <p><strong>Статус:</strong> 
+        <span class="status-badge status-{{ booking_data.status }}">
+            {% if booking_data.status == 'pending' %}Ожидает
+            {% elif booking_data.status == 'active' %}Клиент на месте
+            {% elif booking_data.status == 'completed' %}Завершена
+            {% elif booking_data.status == 'missed' %}Пропущена
+            {% endif %}
+        </span>
+        {% if booking.has_penalty %}
+            <span style="color: red;">⚠️ Штраф применён</span>
+        {% endif %}
+    </p>
+
+    <!-- Контейнер для ошибок -->
+    <div id="error-message" class="alert alert-error" style="display: none;"></div>
+
+    <!-- Кнопки -->
+    
+    <div id="action-buttons">
+        {% if booking_data.status == 'pending' %}
+            <button id="btn-arrived" class="btn btn-primary">Я на месте</button>
+        {% elif booking_data.status == 'active' %}
+            <button id="btn-completed" class="btn btn-success">Завершить бронь</button>
+        {% endif %}
+    </div>
+
+    <!-- Скрытое поле с ID брони для JS -->
+    <script>
+        window.bookingId = {{ booking_data.id }};
+    </script>
+{% endblock %}
