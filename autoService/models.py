@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone, time
 from django.db import models
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -29,6 +29,38 @@ class AutoService(models.Model):
     def __str__(self):
         return f'{self.name}'
     
+    def get_working_hours(self):
+        start = int(self.workingHours.split('-')[0])
+        end = int(self.workingHours.split('-')[1])
+        slots = []
+        for i in range(start, end):
+            slots.append(f'{i:02d}:00')
+            
+        return slots
+    
+    def get_availability_for_date(self, target_date):
+        boxes = self.box_set.all()
+        time_slots = self.get_working_hours()
+        table = {box.id: {slot: 'free' for slot in time_slots} for box in boxes}
+        
+        bookings = Booking.objects.filter(date = target_date).select_related('box')
+        
+        for book in bookings:
+            for slot in time_slots:
+                slot_hour = int(slot.split(':')[0])
+                slot_start = time(slot_hour, 0)
+                print(f'{slot_start} + {timezone}')
+                slot_end = time((slot_hour + 1) % 24, 0)
+                
+                if book.start_time < slot_end and book.end_time > slot_start:
+                    table[book.box_id][slot] = 'busy'
+        
+        return {
+            'boxes': boxes,
+            'time_slots': time_slots,
+            'table': table,
+        }
+        
 class Equipment(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
@@ -90,7 +122,7 @@ class Booking(models.Model):
                 "Слишком рано: можно отметить прибытие за 15 минут до начала"
             )
 
-        if now > start_dt + timedelta(minutes=30):
+        if now > start_dt + timedelta(minutes=30): 
             self.has_penalty = True
             self.status = self.BookStatus.MISSED
         else:
