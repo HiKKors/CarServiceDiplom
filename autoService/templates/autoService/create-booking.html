@@ -180,40 +180,64 @@ function updateFormFields() {
 
 // === Расчёт цены ===
 document.addEventListener('DOMContentLoaded', function() {
+    function getSelectedSlots() {
+        console.log("getSelectedSlots");
+        return document.querySelectorAll('.slot-selected').length;
+    }
+
+    function getEquipmentPricePerHour() {
+        console.log("getEquipmentPricePerHour");
+        let total = 0;
+
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+
+            if (!checkbox.checked) return;
+
+            const label = checkbox.nextElementSibling;
+
+            if (!label) return;
+
+            const match = label.textContent.match(/(\d+)\s*руб/);
+
+            if (match) {
+                total += parseInt(match[1]);
+            }
+        });
+
+        return total;
+    }
+
     function calculateTotalPrice() {
-        const startTime = document.getElementById('selected-start-time').value;
-        const endTime = document.getElementById('selected-end-time').value;
-        
-        if (!startTime || !endTime) {
+        console.log("calculateTotalPrice");
+        const hours = getSelectedSlots();
+        console.log(hours);
+        const pricePerHour = getEquipmentPricePerHour();
+
+        if (hours === 0 || pricePerHour === 0) {
             document.getElementById('total-price').textContent = '0';
             return;
         }
 
-        const start = new Date(`1970-01-01T${startTime}:00`);
-        const end = new Date(`1970-01-01T${endTime}:00`);
-        const hours = (end - start) / (1000 * 60 * 60);
+        const total = hours * pricePerHour;
 
-        let total = 0;
-        // Исправлено: querySelectorAll вместо getElementById
-        document.querySelectorAll('input[name="equipment"]').forEach(checkbox => {
-            if (checkbox.checked) {
-                // Ищем цену в соседнем элементе (label)
-                const label = checkbox.nextElementSibling;
-                if (label) {
-                    const match = label.textContent.match(/(\d+)\s*руб/);
-                    if (match) {
-                        total += parseInt(match[1]) * hours;
-                    }
-                }
-            }
-        });
+        console.log("Total", total);
 
-        document.getElementById('total-price').textContent = Math.round(total);
+        document.getElementById('total-price').textContent = total;
     }
 
-    // Слушатели для оборудования
-    document.querySelectorAll('input[name="equipment"]').forEach(checkbox => {
-        checkbox.addEventListener('change', calculateTotalPrice);
+    /* Пересчёт при кликах */
+    document.addEventListener('click', function (e) {
+
+        if (e.target.classList.contains('slot-free')) {
+            setTimeout(calculateTotalPrice, 50);
+        }
+
+    });
+
+
+    /* Пересчёт при выборе оборудования */
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', calculateTotalPrice);
     });
 });
 

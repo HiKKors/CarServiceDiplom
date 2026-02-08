@@ -97,6 +97,7 @@ def create_booking(request, service_id):
         booking_form.fields['equipment'].queryset = Equipment.objects.filter(service_id=service_id)
         
         box_id = request.POST.get('box')
+        print('box_id:', box_id)
         box = Box.objects.get(id=box_id)
         
         if booking_form.is_valid():

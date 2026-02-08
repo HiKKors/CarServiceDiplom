@@ -52,9 +52,9 @@
             </li>
             <li class="has-subnav">
                 {% if user.is_admin %}
-                <a href="{% url 'garage' %}">
+                <a href="{% url 'services_staff' %}">
                     <i class="fa fa-car fa-2x" aria-hidden="true"></i>
-                    <span class="nav-text">Мой гараж</span>
+                    <span class="nav-text">Мой персонал</span>
                 </a>
                 {% else %}
                 <a href="{% url 'garage' %}">

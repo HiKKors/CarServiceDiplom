@@ -1,0 +1,146 @@
+{% extends "autoService/menu-layout.html" %}
+
+{% load static %}
+
+{% block styles %}
+<meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #f0f2f5; }
+        .stat-card { border: none; border-radius: 12px; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .icon-shape { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
+        .bg-gradient-primary { background: linear-gradient(87deg, #5e72e4 0, #825ee4 100%); }
+        .bg-gradient-success { background: linear-gradient(87deg, #2dce89 0, #2dcecc 100%); }
+        .bg-gradient-danger { background: linear-gradient(87deg, #f5365c 0, #f56036 100%); }
+    </style>
+{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#"><i class="fas fa-car-wrench me-2"></i>ServiceAdmin</a>
+        <div class="navbar-nav">
+            <a class="nav-link" href="{% url 'dashboard' service %}"><i class="fas fa-chart-pie me-1"></i> Дашборд</a>
+            <a class="nav-link active" href="{% url 'add_expense' service %}"><i class="fas fa-plus-circle me-1"></i> Добавить расход</a>
+            <a class="nav-link" href="#"><i class="fas fa-calendar-alt me-1"></i> Бронирования</a>
+        </div>
+    </div>
+</nav>
+<div class="container-fluid py-4">
+    <h2 class="mb-4 fw-bold">Панель управления автосервисом</h2>
+
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card shadow-sm p-3">
+                <div class="d-flex align-items-center">
+                    <div class="icon-shape bg-gradient-primary text-white shadow-sm me-3">
+                        <i class="fas fa-coins fa-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-uppercase text-muted mb-0">Выручка</p>
+                        <h4 class="fw-bold mb-0">{{ total_revenue }} ₽</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card shadow-sm p-3">
+                <div class="d-flex align-items-center">
+                    <div class="icon-shape bg-gradient-danger text-white shadow-sm me-3">
+                        <i class="fas fa-shopping-cart fa-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-uppercase text-muted mb-0">Расходы</p>
+                        <h4 class="fw-bold mb-0">{{ total_expenses }} ₽</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card shadow-sm p-3">
+                <div class="d-flex align-items-center">
+                    <div class="icon-shape bg-gradient-success text-white shadow-sm me-3">
+                        <i class="fas fa-chart-line fa-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-uppercase text-muted mb-0">Прибыль</p>
+                        <h4 class="fw-bold mb-0 text-success">{{ profit }} ₽</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card shadow-sm p-3">
+                <div class="d-flex align-items-center">
+                    <div class="icon-shape bg-dark text-white shadow-sm me-3">
+                        <i class="fas fa-calendar-check fa-lg"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-uppercase text-muted mb-0">Всего записей</p>
+                        <h4 class="fw-bold mb-0">{{ total_bookings }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm p-4 h-100">
+                <h5 class="fw-bold mb-4">Динамика выручки за неделю</h5>
+                <canvas id="revenueChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm p-4 h-100">
+                <h5 class="fw-bold mb-4">Последние записи</h5>
+                <div class="list-group list-group-flush">
+                    {% for booking in recent_bookings %}
+                    <div class="list-group-item px-0 border-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0 fw-bold">{{ booking.user.name }}</h6>
+                                <small class="text-muted">{{ booking.date }} в {{ booking.start_time }} - {{ booking.end_time }}</small>
+                            </div>
+                            <span class="badge bg-light text-dark">{{ booking.total_price }} ₽</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">Записей пока нет</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ labels|safe }},
+            datasets: [{
+                label: 'Выручка (₽)',
+                data: {{ values|safe }},
+                borderColor: '#5e72e4',
+                backgroundColor: 'rgba(94, 114, 228, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+{% endblock %}
