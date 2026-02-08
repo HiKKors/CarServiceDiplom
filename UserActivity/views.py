@@ -35,7 +35,7 @@ def add_user_car(request):
     else:
         form = UserCarForm()
             
-    return render(request, 'UserActivity/add-user-car.html', {'form': form})
+    return render(request, 'UserActivity/add_user_car.html', {'form': form})
 
 class UserGarageVeiw(ListView):
     queryset = UserCar.objects.all()
@@ -57,7 +57,7 @@ class CustomLogoutView(View):
     
 class UserBookingsView(ListView):
     queryset = Booking.objects.all()
-    template_name = 'UserActivity/client-bookings.html'
+    template_name = 'UserActivity/client_bookings.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
