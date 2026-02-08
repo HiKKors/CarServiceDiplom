@@ -1,0 +1,23 @@
+{% extends 'autoService/menu-layout.html' %}
+
+{% block styles %}
+
+{% endblock %}
+
+{% block content %}
+<h2>Персонал: {{ service.name }}</h2>
+
+<a href="{% url 'services_staff' %}">← Назад к списку сервисов</a>
+
+{% if staff_list %}
+    <ul>
+    {% for staff in staff_list %}
+        <li>{{ staff.name }} {{ staff.surname }}</li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>В этом автосервисе пока нет персонала.</p>
+{% endif %}
+
+<a href="{% url 'add_staff' service.id %}">+ Добавить сотрудника</a>
+{% endblock %}

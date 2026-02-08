@@ -1,0 +1,53 @@
+{% extends "autoService/menu-layout.html" %}
+{% load static %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'autoService/css/add_staff.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="page-wrapper">
+
+    <div class="form-card">
+
+        <h1 class="form-title">Новый сотрудник</h1>
+
+        <form method="post" novalidate>
+
+            {% csrf_token %}
+
+            <div class="form-row">
+                <label for="{{ form.name.id_for_label }}">Имя</label>
+                {{ form.name }}
+                {{ form.name.errors }}
+            </div>
+
+            <div class="form-row">
+                <label for="{{ form.surname.id_for_label }}">Фамилия</label>
+                {{ form.surname }}
+                {{ form.surname.errors }}
+            </div>
+
+            <div class="form-row">
+                <label for="{{ form.salary.id_for_label }}">Зарплата</label>
+                {{ form.salary }}
+                {{ form.salary.errors }}
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                    Сохранить
+                </button>
+
+                <a href="{% url 'my_staff' service_id %}" class="btn-secondary">
+                    Отмена
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+{% endblock %}
