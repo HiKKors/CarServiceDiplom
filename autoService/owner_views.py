@@ -281,7 +281,6 @@ class MyStaffView(ListView):
         return context
     
 def add_staff_view(request, service):
-    
     if request.method == 'POST':
         form = AddStaffForm(request.POST)
         if form.is_valid():
@@ -302,3 +301,6 @@ def add_staff_view(request, service):
         form = AddStaffForm()
         
         return render(request, 'admin_templates/add_staff.html', {'form': form, 'service_id': service})
+    
+class ServiceAnalytics(TemplateView):
+    pass
