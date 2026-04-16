@@ -1,0 +1,130 @@
+/* Общий контейнер */
+.page-wrapper {
+    background: #f4f6f8;
+    min-height: 100vh;
+    padding: 60px 20px;
+
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* Карточка формы */
+.form-card {
+    max-width: 520px;
+    margin: 0 auto;
+
+    background: #ffffff;
+
+    border: 1px solid #e3e6ea;
+    border-radius: 6px;
+
+    padding: 32px 36px;
+}
+
+/* Заголовок */
+.form-title {
+    margin-bottom: 28px;
+
+    font-size: 22px;
+    font-weight: 600;
+
+    color: #1f2933;
+}
+
+/* Строка формы */
+.form-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 22px;
+}
+
+/* Label */
+.form-row label {
+    font-size: 14px;
+    font-weight: 500;
+
+    margin-bottom: 6px;
+
+    color: #374151;
+}
+
+/* Поля */
+.form-row input {
+    height: 38px;
+
+    padding: 6px 10px;
+
+    font-size: 14px;
+
+    border: 1px solid #cfd6dd;
+    border-radius: 4px;
+
+    background: #fff;
+
+    transition: border-color 0.15s;
+}
+
+/* Focus */
+.form-row input:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+/* Ошибки Django */
+.form-row ul.errorlist {
+    list-style: none;
+    padding: 4px 0 0;
+    margin: 0;
+
+    color: #dc2626;
+    font-size: 13px;
+}
+
+/* Кнопки */
+.form-actions {
+    display: flex;
+    gap: 12px;
+
+    margin-top: 30px;
+}
+
+/* Основная кнопка */
+.btn-primary {
+    padding: 8px 20px;
+
+    background: #2563eb;
+    color: #fff;
+
+    border: none;
+    border-radius: 4px;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+}
+
+/* Вторичная кнопка */
+.btn-secondary {
+    padding: 8px 20px;
+
+    border: 1px solid #cfd6dd;
+    border-radius: 4px;
+
+    background: #fff;
+    color: #374151;
+
+    font-size: 14px;
+
+    text-decoration: none;
+
+    display: flex;
+    align-items: center;
+}
+
+.btn-secondary:hover {
+    background: #f3f4f6;
+}
