@@ -1,0 +1,172 @@
+{% extends 'autoService/menu-layout.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}
+<title>Добавить автосервис</title>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .form-card { border: none; border-radius: 15px; margin-bottom: 2rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .section-title { border-bottom: 2px solid #f8f9fa; padding-bottom: 1rem; margin-bottom: 1.5rem; color: #0d6efd; font-weight: 700; }
+    .equipment-item { background-color: #f8f9fa; border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; border: 1px solid #eef0f2; }
+    .penalty-section { display: none; background-color: #fffaf0; border: 1px dashed #ffc107; border-radius: 15px; padding: 20px; margin-top: 15px; }
+    .penalty-section.show { display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4">
+        <h1 class="fw-bold text-dark">Добавление нового автосервиса</h1>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" style="border-radius: 10px;">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" class="add_form">
+        {% csrf_token %}
+        
+        <div class="row g-4">
+            <div class="col-lg-8">
+                
+                <div class="card form-card">
+                    <div class="card-body p-4">
+                        <h5 class="section-title"><i class="fas fa-edit me-2"></i>Данные автосервиса</h5>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="small fw-bold text-muted text-uppercase">Название</label>
+                                {{ service_form.name|add_class:"form-control" }}
+                            </div>
+                            <div class="col-12">
+                                <label class="small fw-bold text-muted text-uppercase">Описание</label>
+                                {{ service_form.description|add_class:"form-control"|attr:"rows:2" }}
+                            </div>
+                            <div class="col-12">
+                                <label class="small fw-bold text-muted text-uppercase">Адрес</label>
+                                {{ service_form.address|add_class:"form-control" }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card form-card">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center section-title">
+                            <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Оборудование</h5>
+                            <button type="button" id="add-equipment" class="btn btn-sm btn-outline-primary fw-bold">
+                                <i class="fas fa-plus me-1"></i> Добавить строку
+                            </button>
+                        </div>
+                        
+                        <div id="equipment-list">
+                            <div class="equipment-item row g-2 align-items-end">
+                                <div class="col-md-6">
+                                    <label class="small text-muted">Название инструмента</label>
+                                    <input type="text" class="form-control" name="equipment_name" placeholder="Напр: Подъемник">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="small text-muted">Цена (₽/час)</label>
+                                    <input type="number" class="form-control" name="equipment_price" placeholder="0">
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <button type="button" class="btn btn-outline-danger w-100 remove-equipment"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                
+                <div class="card form-card">
+                    <div class="card-body p-4">
+                        <h5 class="section-title"><i class="fas fa-clock me-2"></i>График работы</h5>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="small fw-bold text-muted text-uppercase">Начало</label>
+                                {{ service_form.start_working_time|add_class:"form-control" }}
+                            </div>
+                            <div class="col-6">
+                                <label class="small fw-bold text-muted text-uppercase">Конец</label>
+                                {{ service_form.end_working_time|add_class:"form-control" }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card form-card bg-dark text-white p-4 text-center">
+                    <h5 class="fw-bold mb-3 text-primary">Инфраструктура</h5>
+                    <label class="small fw-bold opacity-75 text-uppercase">Количество боксов</label>
+                    {{ box_form.count|add_class:"form-control form-control-lg border-0 text-center fw-bold bg-secondary text-white" }}
+                </div>
+
+                <div class="card form-card p-3 text-center">
+                    <button type="button" id="add_penalty" class="btn btn-outline-warning w-100 fw-bold mb-2">Настроить штрафы</button>
+                    <div id="penalty-fields" class="penalty-section text-start">
+                        <div class="mb-2">
+                            <label class="small text-muted fw-bold text-uppercase">Опоздание (мин)</label>
+                            <input type="number" name="free_delay" class="form-control" value="10">
+                        </div>
+                        <div class="mb-2">
+                            <label class="small text-muted fw-bold text-uppercase">Штраф (₽/мин)</label>
+                            <input type="number" name="penalty_for_delay" class="form-control" value="50">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow">
+                    <i class="fas fa-save me-2"></i>Сохранить сервис
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Добавление оборудования (используем простые имена для getlist во вьюхе)
+    document.getElementById('add-equipment').addEventListener('click', () => {
+        const list = document.getElementById('equipment-list');
+        const newItem = document.createElement('div');
+        newItem.className = 'equipment-item row g-2 align-items-end';
+        newItem.innerHTML = `
+            <div class="col-md-6">
+                <label class="small text-muted text-uppercase" style="font-size: 0.7rem;">Название</label>
+                <input type="text" class="form-control" name="equipment_name">
+            </div>
+            <div class="col-md-4">
+                <label class="small text-muted text-uppercase" style="font-size: 0.7rem;">Цена (₽/ч)</label>
+                <input type="number" class="form-control" name="equipment_price">
+            </div>
+            <div class="col-md-2 text-end">
+                <button type="button" class="btn btn-outline-danger w-100 remove-equipment"><i class="fas fa-trash-alt"></i></button>
+            </div>
+        `;
+        list.appendChild(newItem);
+    });
+
+    // Удаление оборудования
+    document.addEventListener("click", function(e) {
+        if (e.target.closest(".remove-equipment")) {
+            e.target.closest(".equipment-item").remove();
+        }
+    });
+
+    // Штрафы
+    document.getElementById('add_penalty').addEventListener('click', function() {
+        const section = document.getElementById('penalty-fields');
+        section.classList.toggle('show');
+        this.innerText = section.classList.contains('show') ? 'Скрыть штрафы' : 'Настроить штрафы';
+    });
+</script>
+{% endblock %}

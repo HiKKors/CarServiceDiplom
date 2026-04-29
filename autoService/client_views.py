@@ -1,16 +1,19 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import ListView, DetailView, View
+from django.views.generic import ListView, DetailView, View, CreateView
 
 from django.http import JsonResponse
 # from django.contrib.auth.decorators import login_required
 
 from .models import AutoService, Equipment, Box, BookingEquipment, BookingDetail, SparePart, Booking, BookingSparePart
 from UserActivity.models import Review, UserCar
-from .forms import BookingForm, BookingMainDetailForm, BookingSparePartForm, BookingSparePartFormSet
+from .forms import BookingForm, BookingMainDetailForm, BookingSparePartForm, BookingSparePartFormSet, ReviewForm
 from .filters import ServiceFilterForm
 
 from django.forms import modelformset_factory
 from django.core.exceptions import ValidationError
+from django.contrib import messages
+
+from django.db import transaction
 
 import datetime
 
@@ -29,6 +32,7 @@ class AllServicesList(ListView):
     context_object_name = 'services'
     template_name = 'autoService/all_services.html'
     
+    paginate_by = 10
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -64,32 +68,37 @@ class ServiceDetail(DetailView):
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        service_id = self.object.id
+        # Получаем объект напрямую, без лишних запросов к базе
+        service = self.object
         
-        service_data = AutoService.objects.get(id=service_id)
-        print(service_data.workingHours)
-        current_hour = datetime.datetime.now().time().hour
-        service_work_hours = service_data.workingHours
-        start_work, end_work = service_work_hours.split('-')
-        
-        if int(start_work) <= current_hour <= int(end_work):
-            context['is_open'] = True
-            context['will_close_in'] = int(end_work) - int(current_hour)
-        else:
-            context['is_open'] = False
+        try:
+            # Парсим часы работы (предполагаем формат "09-18")
+            start_work, end_work = map(int, service.workingHours.split('-'))
             
-        equipment_list = Equipment.objects.filter(service_id=service_id)
-        # reviews = Review.objects.filter(service_id = service_id)
+            # Берем локальное время с учетом настроек часового пояса в Django
+            current_hour = timezone.localtime().hour
+            print(current_hour)
+            
+            if start_work <= current_hour < end_work:
+                context['is_open'] = True
+                context['will_close_in'] = end_work - current_hour
+            else:
+                context['is_open'] = False
+        except (ValueError, AttributeError):
+            # Защита от ошибок, если workingHours не заполнены или кривого формата
+            context['is_open'] = False
+            context['will_close_in'] = 0
+            
+        context['equipment_list'] = Equipment.objects.filter(service_id=service.id)
+        context['reviews'] = Review.objects.filter(service_id=service.id).order_by('-date')
         
-        context['equipment_list'] = equipment_list
-        # context['reviews'] = reviews
         return context
     
 def create_booking(request, service_id):
     service = get_object_or_404(AutoService, id=service_id)
 
     if request.method == 'POST':
-        print('POST')
+        print('POST', request.POST)
         booking_form = BookingForm(request.POST)
         booking_equipment = BookingEquipment()
 
@@ -101,14 +110,19 @@ def create_booking(request, service_id):
         box = Box.objects.get(id=box_id)
         
         if booking_form.is_valid():
+            total_price = calculate_total_booking_price(booking_form.cleaned_data)
             
             booking = booking_form.save(commit=False)
             
             booking.user_id = request.user
             booking.service_id = AutoService.objects.get(id=service_id)
+            print(booking_form.cleaned_data)
+
             booking.box = box
             if Booking.objects.filter(date = booking.date, start_time = booking.start_time, end_time = booking.end_time, box = booking.box):
                 print('Ошибка: бокс и время уже занято')
+                
+            booking.total_price = total_price
             
             booking.save()
             
@@ -128,7 +142,7 @@ def create_booking(request, service_id):
     else:
         booking_form = BookingForm()
         
-        # booking_form.fields['user_car_id'].queryset = UserCar.objects.filter(user = request.user)
+        booking_form.fields['user_car_id'].queryset = UserCar.objects.filter(user = request.user)
         booking_form.fields['box'].queryset = Box.objects.filter(service_id = service_id)
         # booking_form.fields['box'].name = 'box'
         
@@ -156,41 +170,51 @@ def create_booking(request, service_id):
         'selected_date': selected_date or timezone.now().date().isoformat()
         
     })
+    
+    
+def calculate_total_booking_price(data):
+    print('calculate_total_booking_price')
+    if data:
+        total_price = 0
 
+        hours = int(data['end_time'].hour) - int(data['start_time'].hour)
+        
+        for equip in data['equipment']:
+            total_price += equip.price * hours
+            
+        return total_price
+    else:
+        pass
 def add_booking_detail(request, service_id, booking_id):
-    booking = Booking.objects.get(id = booking_id)
+    # Безопасное получение брони
+    booking = get_object_or_404(Booking, id=booking_id)
     
     if request.method == 'POST':
-        print('МЕТОД POST ДЕТАЛИ БРОНИ')
         detail_form = BookingMainDetailForm(request.POST)
         formset = BookingSparePartFormSet(request.POST, queryset=BookingSparePart.objects.none())
         
-        print(formset.errors)
         if detail_form.is_valid() and formset.is_valid():
-            print('ФОРМА ОСНОВНЫХ ДЕТАЛЕЙ БРОНИ ВАЛИДНА')
-            booking_detail = detail_form.save(commit=False)
-            booking_detail.booking = booking
-            booking_detail.save()
             
-            print('ВАЛИДНОСТЬ ФОРМСЕТА', formset.is_valid())
-            print(formset.errors)
-            for form in formset:
-                if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
-                    print('СОХРАНЕНИЕ ЗАПЧАСТЕЙ')
-                    part = form.cleaned_data['part']
-                    quantity = form.cleaned_data['quantity']
-                    
-                    print(part)
-                    print(quantity)
-                    
-                    BookingSparePart.objects.create(
-                        booking_detail=booking_detail,
-                        part=part,
-                        quantity=quantity
-                    )
-                    
-            return redirect(f'/%2Fservice-info/{service_id}')
-    
+            # ОТКРЫВАЕМ ТРАНЗАКЦИЮ: все сохранения внутри блока пройдут как одна операция
+            with transaction.atomic():
+                booking_detail = detail_form.save(commit=False)
+                booking_detail.booking = booking
+                booking_detail.save()
+                
+                for form in formset:
+                    if form.cleaned_data and not form.cleaned_data.get('DELETE', False):
+                        part = form.cleaned_data.get('part')
+                        quantity = form.cleaned_data.get('quantity')
+                        
+                        if part and quantity: # Проверка на пустые строки
+                            BookingSparePart.objects.create(
+                                booking_detail=booking_detail,
+                                part=part,
+                                quantity=quantity
+                            )
+                            
+            # Используем redirect по имени пути (если у тебя настроен name='service_detail' в urls.py)
+            return redirect(f'/service-info/{service_id}')
     else:
         detail_form = BookingMainDetailForm()
         formset = BookingSparePartFormSet(queryset=BookingSparePart.objects.none())
@@ -360,7 +384,24 @@ def get_available_times(request):
     
     return JsonResponse({'slots': slots})
 
-
+def add_review(request, service_id):
+    service = get_object_or_404(AutoService, id=service_id)
     
-
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.user = request.user
+            review.service_id = service
+            review.save()
+            
+            messages.success(request, 'Спасибо за отзыв!')
+            return(redirect('service', pk=service_id))
+    else:
+        form = ReviewForm()
+    
+    return render(request, 'autoService/add_review.html', {
+        'form': form,
+        'service': service
+    })
 

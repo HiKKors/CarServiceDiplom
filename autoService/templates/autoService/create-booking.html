@@ -4,87 +4,214 @@
 {% load json_extras %}
 
 {% block styles %}
-<link rel="stylesheet" href="{% static 'css/create_booking.css' %}">
+<!-- <link rel="stylesheet" href="{% static 'css/create_booking.css' %}"> -->
 <style>
-.availability-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-.availability-table th, .availability-table td { padding: 8px; text-align: center; border: 1px solid #ddd; }
-.slot-free { background: #d4edda; cursor: pointer; }
-.slot-busy { background: #f8d7da; color: #721c24; }
-.slot-selected { background: #ffc107; font-weight: bold; }
-.box-label { background: #e9ecef; font-weight: bold; }
+    /* Улучшенные стили для таблицы слотов */
+    .availability-table { 
+        width: 100%; 
+        border-collapse: separate; 
+        border-spacing: 2px;
+        margin: 0; 
+    }
+    .availability-table th { 
+        padding: 10px 8px; 
+        text-align: center; 
+        font-weight: 600;
+        color: #495057;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+    }
+    .availability-table td { 
+        padding: 12px 8px; 
+        text-align: center; 
+        border-radius: 6px;
+        transition: all 0.2s;
+        vertical-align: middle;
+    }
+    .slot-free { 
+        background: #e6f4ea; 
+        color: #1e8e3e;
+        cursor: pointer; 
+        border: 1px solid transparent;
+    }
+    .slot-free:hover {
+        background: #ceead6;
+        transform: scale(1.05);
+    }
+    .slot-busy { 
+        background: #fce8e6; 
+        color: #d93025; 
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    .slot-selected { 
+        background: #fbbc04 !important; /* Желтый акцент */
+        color: #000;
+        font-weight: bold; 
+        border: 1px solid #f29900;
+        transform: scale(1.05);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .box-label { 
+        background: #f8f9fa; 
+        font-weight: 700; 
+        color: #202124;
+        text-align: left !important;
+        padding-left: 15px !important;
+    }
+
+    /* Стилизуем стандартный вывод чекбоксов Django */
+    .equipment-list ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .equipment-list li {
+        margin-bottom: 10px;
+        padding: 10px 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+    .equipment-list label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        cursor: pointer;
+        font-weight: 500;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<form id="booking-form" method="POST">
-    {% csrf_token %}
+<div class="container-fluid p-0 py-4 px-xl-5">
     
-    <!-- Скрытые поля для отправки -->
-    <input type="hidden" name="box" id="selected-box">
-    <input type="hidden" name="start_time" id="selected-start-time">
-    <input type="hidden" name="end_time" id="selected-end-time">
-
-    <!-- Выбор даты -->
-    <label>Дата:</label>
-    <input type="date" name="date" value="{{ selected_date }}" min="{{ today }}">
-    <button type="button" onclick="showAvailability()">
-        Показать доступность
-    </button>
-
-    <!-- Таблица (если есть данные) -->
-    {% if availability_data %}
-    <div style="margin: 20px 0;">
-        <h3>Доступные слоты:</h3>
-        <table class="availability-table">
-            <thead>
-                <tr>
-                    <th>Бокс</th>
-                    {% for slot in availability_data.time_slots %}
-                        <th>{{ slot }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for box in availability_data.boxes %}
-                <tr>
-                    <td class="box-label">Бокс {{ box.name }}</td>
-                    {% for slot in availability_data.time_slots %}
-                        {% with status=availability_data.table|get_item:box.id|get_item:slot %}
-                        <td 
-                            class="slot-{{ status }}"
-                            data-box-id="{{ box.id }}"
-                            data-start-time="{{ slot }}"
-                            {% if status == 'free' %}
-                                onclick="selectSlot({{ box.id }}, '{{ slot }}')"
-                            {% endif %}
-                        >
-                            {% if status == 'free' %}🚗{% elif status == 'busy' %}⛔{% endif %}
-                        </td>
-                        {% endwith %}
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
-
-    <!-- Остальные поля формы -->
-    <label>Автомобиль:</label>
-    {{ form.user_car_id }}
-
-    <label>Комментарии:</label>
-    {{ form.comment }}
-
-    <label>Оборудование:</label>
-    {{ form.equipment }}
-
-    <div>
-        <p>Итоговая цена: <span id="total-price">0</span> руб</p>
+    <div class="d-flex align-items-center mb-4" style="border-bottom: 2px solid #dee2e6; padding-bottom: 20px;">
+        <a href="{% url 'service' service_id %}" class="btn btn-outline-secondary rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h2 mb-0 fw-bold text-dark">Оформление записи</h1>
+            <p class="text-muted mb-0 mt-1">Выберите удобное время и укажите детали</p>
+        </div>
     </div>
 
-    <button type="submit">Забронировать</button>
-</form>
+    <form id="booking-form" method="POST">
+        {% csrf_token %}
+        
+        <input type="hidden" name="box" id="selected-box">
+        <input type="hidden" name="start_time" id="selected-start-time">
+        <input type="hidden" name="end_time" id="selected-end-time">
+
+        <div class="row g-4">
+            
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0 mb-4" style="border-radius: 15px;">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-4"><i class="far fa-calendar-alt text-primary me-2"></i>1. Выберите дату и время</h5>
+                        
+                        <div class="d-flex gap-3 mb-4 align-items-end">
+                            <div class="flex-grow-1" style="max-width: 300px;">
+                                <label class="form-label text-muted small fw-bold text-uppercase">Дата визита</label>
+                                <input type="date" name="date" class="form-control form-control-lg" value="{{ selected_date }}" min="{{ today }}">
+                            </div>
+                            <button type="button" class="btn btn-primary btn-lg px-4" onclick="showAvailability()">
+                                <i class="fas fa-search me-2"></i>Найти окна
+                            </button>
+                        </div>
+
+                        {% if availability_data %}
+                            <div class="mt-4">
+                                <label class="form-label text-muted small fw-bold text-uppercase mb-3">Доступные боксы и время (нажмите на свободное время)</label>
+                                <div class="table-responsive rounded border border-light">
+                                    <table class="availability-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="min-width: 150px; text-align: left; padding-left: 15px;">Бокс</th>
+                                                {% for slot in availability_data.time_slots %}
+                                                    <th>{{ slot }}</th>
+                                                {% endfor %}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for box in availability_data.boxes %}
+                                            <tr>
+                                                <td class="box-label">
+                                                    <i class="fas fa-warehouse text-secondary me-2"></i>{{ box.name }}
+                                                </td>
+                                                {% for slot in availability_data.time_slots %}
+                                                    {% with status=availability_data.table|get_item:box.id|get_item:slot %}
+                                                    <td 
+                                                        class="slot-{{ status }}"
+                                                        data-box-id="{{ box.id }}"
+                                                        data-start-time="{{ slot }}"
+                                                        {% if status == 'free' %}
+                                                            onclick="selectSlot({{ box.id }}, '{{ slot }}')"
+                                                        {% endif %}
+                                                    >
+                                                        {% if status == 'free' %}
+                                                            <i class="fas fa-check"></i>
+                                                        {% elif status == 'busy' %}
+                                                            <i class="fas fa-ban"></i>
+                                                        {% endif %}
+                                                    </td>
+                                                    {% endwith %}
+                                                {% endfor %}
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-secondary border-0 text-center py-4 mt-3 rounded-3">
+                                <i class="far fa-hand-pointer fa-2x mb-2 text-muted opacity-50"></i>
+                                <p class="mb-0 text-muted">Выберите дату и нажмите "Найти окна", чтобы увидеть расписание.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0" style="border-radius: 15px; position: sticky; top: 20px;">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-4"><i class="fas fa-clipboard-list text-primary me-2"></i>2. Детали записи</h5>
+                        
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold text-uppercase">Ваш автомобиль</label>
+                            {{ form.user_car_id }}
+                            <div class="text-danger small mt-1">{{ form.user_car_id.errors }}</div>
+                        </div>
+
+                        <div class="mb-4 equipment-list">
+                            <label class="form-label text-muted small fw-bold text-uppercase">Услуги / Оборудование</label>
+                            <div style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
+                                {{ form.equipment }}
+                            </div>
+                            <div class="text-danger small mt-1">{{ form.equipment.errors }}</div>
+                        </div>
+
+
+                        <hr class="text-muted my-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded-3 border">
+                            <span class="text-muted fw-bold text-uppercase">К оплате:</span>
+                            <h3 class="mb-0 text-success fw-bold"><span id="total-price">0</span> ₽</h3>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold" style="border-radius: 12px;">
+                            <i class="fas fa-check-circle me-2"></i>Забронировать
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
 
 <script>
 // === Обработка выбора слотов ===
@@ -115,8 +242,8 @@ function clearAllSelection() {
 
 function selectSlot(boxId, slotTime) {
     console.log(slotTime);
-    const cell = event.target;
-    if (!cell.classList.contains('slot-free')) return;
+    const cell = event.target.closest('td'); // <-- ДОБАВИЛ .closest('td'), чтобы клик по иконке <i class="fas fa-check"></i> тоже срабатывал
+    if (!cell || !cell.classList.contains('slot-free')) return;
 
     // Случай 1: первый выбор или другой бокс
     if (currentSelection.boxId === null || currentSelection.boxId !== boxId) {
@@ -180,65 +307,58 @@ function updateFormFields() {
 
 // === Расчёт цены ===
 document.addEventListener('DOMContentLoaded', function() {
-    function getSelectedSlots() {
-        console.log("getSelectedSlots");
-        return document.querySelectorAll('.slot-selected').length;
-    }
-
-    function getEquipmentPricePerHour() {
-        console.log("getEquipmentPricePerHour");
-        let total = 0;
-
-        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-
-            if (!checkbox.checked) return;
-
-            const label = checkbox.nextElementSibling;
-
-            if (!label) return;
-
-            const match = label.textContent.match(/(\d+)\s*руб/);
-
-            if (match) {
-                total += parseInt(match[1]);
+    
+    function calculateTotalPrice() {
+        // 1. Считаем количество выбранных часов (слотов)
+        const selectedSlots = document.querySelectorAll('.slot-selected').length;
+        
+        // 2. Считаем суммарную стоимость оборудования в час
+        let equipmentPricePerHour = 0;
+        document.querySelectorAll('input[name="equipment"]').forEach(checkbox => {
+            if (checkbox.checked) {
+                // Ищем цену в родительском элементе или соседнем label
+                const label = checkbox.closest('label') || checkbox.nextElementSibling;
+                if (label) {
+                    const match = label.textContent.match(/(\d+)/);
+                    if (match) {
+                        equipmentPricePerHour += parseInt(match[1]);
+                    }
+                }
             }
         });
 
-        return total;
-    }
+        // 3. Базовая стоимость часа (аренда бокса), если она есть. 
+        const baseBoxPrice = 150; 
 
-    function calculateTotalPrice() {
-        console.log("calculateTotalPrice");
-        const hours = getSelectedSlots();
-        console.log(hours);
-        const pricePerHour = getEquipmentPricePerHour();
+        // Итоговая формула
+        const total = selectedSlots * (baseBoxPrice + equipmentPricePerHour);
 
-        if (hours === 0 || pricePerHour === 0) {
-            document.getElementById('total-price').textContent = '0';
-            return;
+        // 4. Вывод на экран
+        const priceElement = document.getElementById('total-price');
+        if (priceElement) {
+            priceElement.textContent = total.toLocaleString('ru-RU');
         }
-
-        const total = hours * pricePerHour;
-
-        console.log("Total", total);
-
-        document.getElementById('total-price').textContent = total;
+        
+        console.log(`Слотов: ${selectedSlots}, Цена оборудования/час: ${equipmentPricePerHour}, Итого: ${total}`);
     }
 
-    /* Пересчёт при кликах */
-    document.addEventListener('click', function (e) {
-
-        if (e.target.classList.contains('slot-free')) {
+    // Слушаем клики на всей форме
+    const form = document.getElementById('booking-form');
+    form.addEventListener('click', function(e) {
+        if (e.target.classList.contains('slot-free') || e.target.closest('.slot-free')) {
             setTimeout(calculateTotalPrice, 50);
         }
-
     });
 
-
-    /* Пересчёт при выборе оборудования */
-    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        cb.addEventListener('change', calculateTotalPrice);
+    // Слушаем изменения чекбоксов
+    form.addEventListener('change', function(e) {
+        if (e.target.type === 'checkbox') {
+            calculateTotalPrice();
+        }
     });
+
+    // Запускаем расчет при загрузке
+    calculateTotalPrice();
 });
 
 // === Кнопка "Показать доступность" ===

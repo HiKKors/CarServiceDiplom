@@ -31,6 +31,7 @@ class ServiceFilterForm(FilterSet):
 class AllBookingsFilterForm(FilterSet):
     service_id = CharFilter(label="Название", lookup_expr='icontains', field_name='service_id__name')
     date = CharFilter(label='Дата', lookup_expr='exact')
+    box = CharFilter(label='Бокс', lookup_expr='exact')
     
     class Meta:
         model = Booking

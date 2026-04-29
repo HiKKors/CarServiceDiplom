@@ -1,108 +1,195 @@
 {% extends 'autoService/menu-layout.html' %}
 {% load static %}
 
-{% block styles %}
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-<link rel="stylesheet" type="text/css" href="{% static 'css/all_bookings.css' %}">
+{% block title %}
+<title>Управление записями | Панель администратора</title>
+{% endblock %}
 
+{% block styles %}
+<style>
+    .filter-card {
+        background: #fff;
+        border-radius: 15px;
+        border: none;
+    }
+    .table-container {
+        background: #fff;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    .table thead th {
+        background-color: #f8f9fa;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        color: #6c757d;
+        border-bottom: 2px solid #dee2e6;
+        padding: 15px;
+    }
+    .table tbody td {
+        padding: 15px;
+        vertical-align: middle;
+        font-size: 0.9rem;
+    }
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+    .client-info p { margin-bottom: 0; }
+    .client-phone { color: #0d6efd; text-decoration: none; }
+    .client-phone:hover { text-decoration: underline; }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="filter">
-    <form action="{% url 'all_bookings' %}" method="get" style="margin-left: 300px;">
-        <label for="service_id">Название сервиса</label>
-        <input type="text" name="service_id" value="{{ request.GET.name|default_if_none:'' }}">
-        <label for="date">Дата</label>
-        <input type="date" name="date">
+<div class="container-fluid p-0 py-4 px-xl-5">
+    
+    <div class="mb-4">
+        <h1 class="h2 mb-0 fw-bold text-dark">Журнал записей</h1>
+        <p class="text-muted mt-1">Просмотр и управление всеми бронированиями в ваших сервисах</p>
+    </div>
 
-        <input type="submit" value="Найти">
-    </form>
-</div>
-
-<div class="container">
-    <h1>Мои записи</h1>
-    <div class="columns">
-        <div class="client-c">
-            <b>Клиент</b>
-        </div>
-        <div class="client-contacts-c">
-            <b>Контакты клиента</b>
-        </div>
-        <div class="date-c">
-            <b>Дата</b>
-        </div>
-        <div class="time-c">
-            <b>Время</b>
-        </div>
-        <div class="box-c">
-            <b>Бокс №</b>
-        </div>
-        <div class="service-name-c" style="margin-right: 15px;">
-            <b>Сервис</b>
-        </div>
-        <div class="address-c">
-            <b>Адрес</b>
-        </div>
-        <div class="car-c">
-            <b>Автомобиль</b>
-        </div>
-        <div class="action-c">
-            <b>Действие</b>
+    <div class="card filter-card shadow-sm mb-4">
+        <div class="card-body p-4">
+            <form action="{% url 'all_bookings' %}" method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Поиск по сервису</label>
+                    <input type="text" name="service_id" class="form-control" placeholder="Название сервиса..." value="{{ request.GET.service_id|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Дата</label>
+                    <input type="date" name="date" class="form-control" value="{{ request.GET.date|default:'' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-muted small fw-bold text-uppercase">Статус</label>
+                    <select name="status" class="form-select">
+                        <option value="">Все статусы</option>
+                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Ожидается</option>
+                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>В процессе</option>
+                        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Завершено</option>
+                        <option value="canceled" {% if request.GET.status == 'canceled' %}selected{% endif %}>Отменено</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold" style="border-radius: 8px;">Найти</button>
+                    <a href="{% url 'all_bookings' %}" class="btn btn-outline-secondary" style="border-radius: 8px;"><i class="fas fa-undo"></i></a>
+                </div>
+            </form>
         </div>
     </div>
-    <div class="delete-modal" id="delete-booking">
-        <div class="modal-content">
-            <h4>Вы действительно хотите удалить эту запись</h4>
-            <a href="" class="btn btn-danger btn-sm delete-b">Удалить</a>
+
+    <div class="table-container shadow-sm border">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Клиент</th>
+                        <th>Дата и время</th>
+                        <th>Место</th>
+                        <th>Автомобиль</th>
+                        <th>Статус</th>
+                        <th>Сумма</th>
+                        <th class="text-end">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in all_bookings %}
+                    <tr>
+                        <td>
+                            <div class="client-info">
+                                <p class="fw-bold text-dark">{{ booking.user_id.name }} {{ booking.user_id.surname }}</p>
+                                <a href="tel:{{ booking.user_id.phone_number }}" class="client-phone small">
+                                    <i class="fas fa-phone-alt me-1"></i> {{ booking.user_id.phone_number }}
+                                </a>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ booking.date|date:"d.m.Y" }}</div>
+                            <div class="small text-muted">{{ booking.start_time|time:"H:i" }} — {{ booking.end_time|time:"H:i" }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ booking.service_id.name }}</div>
+                            <div class="small text-muted">Бокс №{{ booking.box.name }}</div>
+                        </td>
+                        <td>
+                            <div class="badge bg-light text-dark border fw-normal">
+                                {{ booking.user_car_id.make }} {{ booking.user_car_id.model }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if booking.status == 'completed' %}
+                                <span class="status-badge bg-success bg-opacity-10 text-success border-success border border-opacity-25">Завершено</span>
+                            {% elif booking.status == 'active' %}
+                                <span class="status-badge bg-primary bg-opacity-10 text-primary border-primary border border-opacity-25 animate-pulse">В процессе</span>
+                            {% elif booking.status == 'pending' %}
+                                <span class="status-badge bg-warning bg-opacity-10 text-warning border-warning border border-opacity-25">Ожидается</span>
+                            {% else %}
+                                <span class="status-badge bg-secondary bg-opacity-10 text-secondary border-secondary border border-opacity-25">Отменено</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold text-dark">
+                            {{ booking.total_price|default:"0" }} ₽
+                        </td>
+                        <td class="text-end">
+                            <div class="dropdown">
+                                <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius: 10px;">
+                                    <li><a class="dropdown-item py-2" href="{% url 'edit_booking' booking.id %}"><i class="fas fa-edit me-2 text-muted"></i> Изменить</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><button class="dropdown-item py-2 text-danger" onclick="confirmDelete('{{ booking.id }}')"><i class="fas fa-trash-alt me-2"></i> Удалить</button></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-calendar-times fa-3x mb-3 opacity-25"></i>
+                                <p class="mb-0">Записей не найдено по вашему запросу</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
-    {% for booking in all_bookings %}
-        <div class="book">
-            <div class="client">
-                <span>{{ booking.user_id.name }} {{ booking.user_id.surname }}</span>
-            </div>
-            <div class="client-contacts">
-                <span>{{ booking.user_id.email }}</span>
-                <p>{{ booking.user_id.phone_number }}</p>
-            </div>
-            <div class="date">
-                <span>{{ booking.date }}</span>
-            </div>
-            <div class="time">
-                <span>{{ booking.start_time }} - {{ booking.end_time }}</span>
-            </div>
-            <div class="box">
-                <span style="margin-left: 43px;">{{ booking.box.name }}</span>
-            </div>
-            <div class="service-name">
-                <span>{{ booking.service_id.name }}</span>
-            </div>
-            <div class="service-address">
-                <span>{{ booking.service_id.address }}</span>
-            </div>
-            <div class="car">
-                <span>{{ booking.user_car_id.make }} {{ booking.user_car_id.model }}</span>
-            </div>
+</div>
 
-            <div class="action">
-                <a class="btn btn-warning btn-sm" th:onclick="'location.href=\'/edit-booking/' + ${booking.id} + '\''">Редактировать</a>
-                <a class="btn btn-danger btn-sm" href="#delete-booking">Удалить</a>
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow" style="border-radius: 15px;">
+            <div class="modal-body p-4 text-center">
+                <i class="fas fa-exclamation-circle text-danger fa-3x mb-3"></i>
+                <h5 class="fw-bold mb-2">Удалить запись?</h5>
+                <p class="text-muted small">Это действие нельзя будет отменить.</p>
+                <div class="d-grid gap-2">
+                    <form id="deleteForm" method="POST" action="">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger w-100 fw-bold mb-2" style="border-radius: 8px;">Да, удалить</button>
+                    </form>
+                    <button type="button" class="btn btn-light w-100 fw-bold" data-bs-dismiss="modal" style="border-radius: 8px;">Отмена</button>
+                </div>
             </div>
         </div>
-    {% empty %}
-    <p>Бронирований не найдено</p>
-    {% endfor %}
+    </div>
 </div>
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+{% endblock %}
+
+{% block scripts %}
 <script>
-    function confirmDelete(button) {
-        if (confirm("Вы уверены, что хотите удалить эту бронь?")) {
-            // Удаление строки
-            var row = button.parentNode.parentNode;
-            row.parentNode.removeChild(row);
-        }
+    function confirmDelete(bookingId) {
+        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        const form = document.getElementById('deleteForm');
+        // Здесь подставь свой URL для удаления, например:
+        form.action = `/delete-booking/${bookingId}/`; 
+        modal.show();
     }
 </script>
 {% endblock %}

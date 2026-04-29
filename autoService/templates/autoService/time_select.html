@@ -1,0 +1,148 @@
+<!-- autoService/templates/autoService/booking_create.html -->
+{% extends "autoService/menu-layout.html" %}
+{% load static %}
+
+{% block title %}Новая бронь{% endblock %}
+
+{% block styles %}
+<style>
+.time-slot {
+    padding: 8px 12px;
+    margin: 4px;
+    border: 1px solid #ccc;
+    background: #e9ecef;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.time-slot.selected {
+    background: #007bff;
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'autoService/js/booking_form.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+<h2>Забронировать бокс</h2>
+
+<!-- Скрытая форма для отправки -->
+<form id="booking-form" method="post" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="box" id="selected-box">
+    <input type="hidden" name="start_time" id="selected-start">
+    <input type="hidden" name="end_time" id="selected-end">
+</form>
+
+<!-- Шаг 1: Выбор автосервиса -->
+<div id="step-service">
+    <label>Автосервис:</label>
+    <select id="service-select" onchange="loadBoxes()">
+        <option value="">-- Выберите --</option>
+        {% for service in services %}
+            <option value="{{ service.id }}">{{ service.name }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<!-- Шаг 2: Выбор бокса -->
+<!-- После выбора автосервиса показываем эту сетку -->
+<h3>Выберите бокс в автосервисе "{{ service.name }}"</h3>
+
+<div id="boxes-grid" style="
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    margin: 20px 0;">
+    {% for box in boxes %}
+        <div 
+            class="box-card"
+            data-box-id="{{ box.id }}"
+            style="
+                padding: 15px;
+                text-align: center;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                cursor: pointer;
+                background: {% if box.is_available %}#e6f4ea{% else %}#f8f9fa{% endif %};
+                color: {% if box.is_available %}#137333{% else %}#6c757d{% endif %};
+                font-weight: bold;
+                transition: all 0.2s;
+            "
+            onclick="selectBox({{ box.id }})"
+            onmouseover="this.style.transform='{% if box.is_available %}scale(1.03){% endif %}'"
+            onmouseout="this.style.transform='scale(1)'"
+        >
+            Бокс {{ box.number }}
+            {% if not box.is_available %}
+                <br><small style="color: #dc3545; font-weight: normal;">Занят</small>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>В этом автосервисе пока нет боксов.</p>
+    {% endfor %}
+</div>
+
+<!-- Скрытое поле для формы -->
+<input type="hidden" id="selected-box" name="box_id">
+
+<div id="step-date-time" style="display:none; margin-top: 20px;">
+    <label><strong>Выберите дату:</strong></label>
+    <input type="date" id="booking-date" min="{{ today }}">
+</div>
+
+<!-- Шаг 3: Выбор даты и времени -->
+<div id="step-date-time" style="display:none; margin-top: 15px;">
+    <label>Дата:</label>
+    <input type="date" id="date-picker" min="{{ today }}" onchange="loadAvailableTimes()">
+    
+    <div id="time-slots" style="margin-top: 10px;"></div>
+</div>
+
+<!-- Кнопка подтверждения -->
+<button id="confirm-btn" onclick="submitBooking()" disabled style="margin-top: 20px;">
+    Забронировать
+</button>
+
+<div id="error-message" style="color: red; margin-top: 10px; display: none;"></div>
+
+{% endblock %}
+<script>
+let selectedBoxId = null;
+
+function selectBox(boxId) {
+    // Снимаем выделение со всех
+    document.querySelectorAll('.box-card').forEach(el => {
+        el.style.borderColor = '#ddd';
+        el.style.boxShadow = 'none';
+    });
+    
+    // Находим выбранный бокс
+    const boxEl = document.querySelector(`.box-card[data-box-id="${boxId}"]`);
+    
+    // Если бокс занят — не даём выбрать
+    if (boxEl.style.color === 'rgb(108, 117, 125)') { // это #6c757d
+        alert('Этот бокс занят сегодня');
+        return;
+    }
+    
+    // Выделяем
+    boxEl.style.borderColor = '#198754';
+    boxEl.style.boxShadow = '0 0 8px rgba(25, 135, 84, 0.4)';
+    selectedBoxId = boxId;
+    document.getElementById('selected-box').value = boxId;
+    
+    // Показываем выбор даты
+    document.getElementById('step-date-time').style.display = 'block';
+}
+
+// Дополнительно: при выборе даты можно подгружать временные слоты (как раньше)
+document.getElementById('booking-date')?.addEventListener('change', function() {
+    if (selectedBoxId && this.value) {
+        // Здесь можно вызвать loadAvailableTimes(), как в предыдущих примерах
+        console.log("Выбрана дата:", this.value, "для бокса", selectedBoxId);
+    }
+});
+</script>

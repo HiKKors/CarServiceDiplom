@@ -1,16 +1,45 @@
 {% extends 'autoService/menu-layout.html' %}
+{% load static %}
 
-{% block styles %}
-
+{% block title %}
+<title>Выбор сервиса | Управление персоналом</title>
 {% endblock %}
 
 {% block content %}
-<h2>Выберите автосервис</h2>
-<ul>
-{% for service in services %}
-    <li>
-        <a href="{% url 'my_staff' service.id %}">{{ service.name }}</a>
-    </li>
-{% endfor %}
-</ul>
+<div class="container-fluid p-0 py-4 px-xl-5">
+    
+    <div class="mb-4">
+        <h1 class="h2 mb-0 fw-bold text-dark">Управление персоналом</h1>
+        <p class="text-muted mt-1">Выберите автосервис, чтобы просмотреть список сотрудников</p>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+        {% for service in services %}
+            <div class="col">
+                <a href="{% url 'my_staff' service.id %}" class="text-decoration-none">
+                    <div class="card h-100 border-0 shadow-sm service-selection-card" style="border-radius: 12px; transition: transform 0.2s;">
+                        <div class="card-body p-4 d-flex align-items-center gap-3">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <i class="fas fa-users-cog fa-lg"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold text-dark mb-0">{{ service.name }}</h5>
+                                <p class="text-muted small mb-0">{{ service.address }}</p>
+                            </div>
+                            <i class="fas fa-chevron-right ms-auto text-muted opacity-50"></i>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .service-selection-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
+        background-color: #fcfdff;
+    }
+</style>
 {% endblock %}

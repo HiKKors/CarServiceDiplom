@@ -1,0 +1,187 @@
+{% extends 'autoService/menu-layout.html' %}
+{% load static %}
+
+{% block title %}
+<title>Управление: {{ my_service.name }}</title>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .stat-card {
+        border: none;
+        border-radius: 15px;
+        transition: transform 0.2s;
+    }
+    .box-card {
+        border-radius: 12px;
+        border: 2px solid #eee;
+        transition: all 0.3s;
+    }
+    .box-occupied { border-color: #ffc107; background-color: #fff9e6; }
+    .box-free { border-color: #198754; background-color: #f8fff9; }
+    .box-closed { border-color: #dc3545; background-color: #fff5f5; opacity: 0.8; }
+    
+    .equipment-badge {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        color: #495057;
+        padding: 5px 12px;
+        border-radius: 20px;
+        display: inline-block;
+        margin: 2px;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0 py-4 px-xl-5">
+    
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'my_services' %}">Мои сервисы</a></li>
+            <li class="breadcrumb-item active">{{ my_service.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0 fw-bold text-dark">{{ my_service.name }}</h1>
+            <p class="text-muted mb-0"><i class="fas fa-map-marker-alt me-1"></i> {{ my_service.address }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'edit_autoservice' my_service.id %}" class="btn btn-outline-primary" style="border-radius: 10px;">
+                <i class="fas fa-edit me-1"></i> Редактировать
+            </a>
+            <a href="{% url 'dashboard' my_service.id %}" class="btn btn-dark" style="border-radius: 10px;">
+                <i class="fas fa-chart-line me-1"></i> Аналитика
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card shadow-sm bg-primary text-white p-3">
+                <div class="small opacity-75">Активных сессий</div>
+                <div class="h3 fw-bold mb-0">{{ active_sessions_count|default:"0" }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card shadow-sm bg-success text-white p-3">
+                <div class="small opacity-75">Записей сегодня</div>
+                <div class="h3 fw-bold mb-0">{{ today_bookings_count|default:"0" }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card shadow-sm bg-warning text-dark p-3">
+                <div class="small opacity-75">Средний рейтинг</div>
+                <div class="h3 fw-bold mb-0"><i class="fas fa-star me-1"></i>{{ rating|default:"0" }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card shadow-sm bg-info text-white p-3">
+                <div class="small opacity-75">Свободных боксов</div>
+                <div class="h3 fw-bold mb-0">2 / 5</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0" style="border-radius: 15px;">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4"><i class="fas fa-th-large text-primary me-2"></i>Состояние боксов</h5>
+                    
+                    <div class="row g-3">
+                        {% for box in boxes %}
+                        <div class="col-md-6">
+                            <div class="card box-card p-3 {% if box.is_occupied %}box-occupied{% elif not box.is_opened %}box-closed{% else %}box-free{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="fw-bold mb-0">Бокс №{{ box.name }}</h6>
+                                    <span class="badge {% if box.is_occupied %}bg-warning text-dark{% elif not box.is_opened %}bg-danger{% else %}bg-success{% endif %}">
+                                        {% if box.is_occupied %}Занят{% elif not box.is_opened %}Закрыт{% else %}Свободен{% endif %}
+                                    </span>
+                                </div>
+                                <div class="small text-muted mb-3">
+                                    {% if box.is_occupied %}
+                                        Клиент: <strong>Николай С.</strong><br>
+                                        Завершение через: <strong>25 мин</strong>
+                                    {% else %}
+                                        Готов к приему клиентов
+                                    {% endif %}
+                                </div>
+                                <div class="mt-3">
+                                    <form action="{% url 'toggle_box_status' box.id %}" method="post">
+                                        {% csrf_token %}
+                                        
+                                        {% if box.is_opened %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger w-100 mb-2" 
+                                                    {% if box.is_occupied %}onclick="return confirm('В боксе сейчас идет работа. Вы уверены, что хотите закрыть его для новых броней?')"{% endif %}>
+                                                <i class="fas fa-times-circle me-1"></i> Закрыть бокс
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-sm btn-success w-100 mb-2">
+                                                <i class="fas fa-check-circle me-1"></i> Открыть бокс
+                                            </button>
+                                        {% endif %}
+                                    </form>
+                                    
+                                    <a href="{% url 'all_bookings' %}?box={{ box.id }}&service_id=&date=&status=" class="btn btn-sm btn-light w-100">
+                                        <i class="fas fa-history me-1"></i> История бокса
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-4" style="border-radius: 15px;">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-tools text-primary me-2"></i>Ресурсы</h5>
+                    <div class="mb-4 d-flex flex-wrap gap-2">
+                        {% for equipment in equipments %}
+                            <form action="{% url 'toggle_equipment_status' equipment.id %}" method="post" class="m-0">
+                                {% csrf_token %}
+                                <button type="submit" 
+                                        class="btn equipment-badge {% if not equipment.is_available %}bg-light text-muted text-decoration-line-through border-danger{% else %}bg-white border-success{% endif %}" 
+                                        title="Нажмите, чтобы включить/выключить"
+                                        style="transition: all 0.2s;">
+                                    {{ equipment.name }} — {{ equipment.price }} ₽
+                                    {% if not equipment.is_available %}
+                                        <i class="fas fa-lock ms-1 small text-danger"></i>
+                                    {% endif %}
+                                </button>
+                            </form>
+                        {% empty %}
+                            <span class="text-muted small">Оборудование не добавлено</span>
+                        {% endfor %}
+                    </div>
+                    <a href="{% url 'edit_autoservice' my_service.id %}" class="btn btn-sm btn-link text-decoration-none p-0">Настроить цены</a>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0" style="border-radius: 15px;">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4"><i class="fas fa-comment-dots text-primary me-2"></i>Свежие отзывы</h5>
+                    {% for review in reviews|slice:":3" %}
+                        <div class="mb-3 pb-3 border-bottom">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold small">{{ review.user.name }}</span>
+                                <span class="text-warning small"><i class="fas fa-star"></i> {{ review.mark }}</span>
+                            </div>
+                            <p class="small text-muted mb-0">{{ review.comment|truncatechars:80 }}</p>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted small">Отзывов пока нет</p>
+                    {% endfor %}
+                    <a href="#" class="btn btn-sm btn-outline-secondary w-100 mt-2" style="border-radius: 8px;">Все отзывы</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

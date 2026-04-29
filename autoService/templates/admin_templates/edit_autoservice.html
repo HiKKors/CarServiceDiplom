@@ -1,0 +1,172 @@
+{% extends 'autoService/menu-layout.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}
+<title>Настройка: {{ my_service.name }}</title>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .settings-card { border: none; border-radius: 15px; margin-bottom: 2rem; }
+    .form-section-title { border-bottom: 2px solid #f8f9fa; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+    .equipment-row { background-color: #f8f9fa; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; border: 1px solid #eef0f2; }
+    .btn-save { border-radius: 10px; padding: 10px 25px; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0 py-4 px-xl-5">
+    
+    <div class="d-flex align-items-center mb-4">
+        <a href="{% url 'my_service_managment' service_id %}" class="btn btn-outline-secondary rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h2 mb-0 fw-bold text-dark">Редактирование автосервиса</h1>
+            <p class="text-muted mb-0">Управление информацией, оборудованием и боксами</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            
+            <div class="card settings-card shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold form-section-title text-primary"><i class="fas fa-id-card me-2"></i>Общие данные</h5>
+                    <form action="{% url 'edit_autoservice' service_id %}" method="post">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            {% for field in auto_service_form %}
+                                <div class="col-md-{% if field.name == 'description' %}12{% else %}6{% endif %}">
+                                    <label class="form-label text-muted small fw-bold text-uppercase">{{ field.label }}</label>
+                                    {{ field|add_class:"form-control" }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="mt-4 text-end">
+                            <button type="submit" name="save_autoservice" class="btn btn-primary btn-save">
+                                <i class="fas fa-save me-1"></i> Сохранить инфо
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card settings-card shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center form-section-title">
+                        <h5 class="fw-bold mb-0 text-primary"><i class="fas fa-tools me-2"></i>Инструменты и цены</h5>
+                        <button type="button" id="add-equipment-btn" class="btn btn-sm btn-outline-primary fw-bold px-3" style="border-radius: 8px;">
+                            <i class="fas fa-plus me-1"></i> Добавить строку
+                        </button>
+                    </div>
+                    
+                    <form action="{% url 'edit_autoservice' service_id %}" method="post">
+                        {% csrf_token %}
+                        {{ equipment_formset.management_form }}
+                        
+                        <div id="equipment-list-container">
+                            {% for form in equipment_formset %}
+                                <div class="equipment-row row g-3 align-items-end">
+                                    {{ form.id }} <div class="col-md-6">
+                                        <label class="form-label small text-muted">Название</label>
+                                        {{ form.name|add_class:"form-control" }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small text-muted">Цена (₽/час)</label>
+                                        {{ form.price|add_class:"form-control" }}
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        {% if equipment_formset.can_delete %}
+                                            <div class="d-none">{{ form.DELETE }}</div>
+                                            <button type="button" class="btn btn-outline-danger w-100 delete-existing-btn">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mt-4 text-end">
+                            <button type="submit" name="save_equipment" class="btn btn-success btn-save">
+                                <i class="fas fa-check-double me-1"></i> Обновить инструменты
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card settings-card shadow-sm border-0 bg-dark text-white">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4"><i class="fas fa-th-large me-2 text-primary"></i>Вместимость</h5>
+                    <form action="{% url 'edit_autoservice' service_id %}" method="post">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label class="form-label text-light small fw-bold text-uppercase opacity-75">Количество боксов</label>
+                            {{ box_form.count|add_class:"form-control form-control-lg bg-secondary border-0 text-white" }}
+                            <p class="text-warning small mt-2 mb-0">
+                                <i class="fas fa-exclamation-triangle me-1"></i> Осторожно: уменьшение может повлиять на записи
+                            </p>
+                        </div>
+                        <button type="submit" name="save_box" class="btn btn-primary w-100 py-2 fw-bold" style="border-radius: 10px;">
+                            Применить
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="empty-form-template" class="d-none">
+    <div class="equipment-row row g-3 align-items-end">
+        <div class="col-md-6">
+            <label class="form-label small text-muted">Название</label>
+            {{ equipment_formset.empty_form.name|add_class:"form-control" }}
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small text-muted">Цена (₽/час)</label>
+            {{ equipment_formset.empty_form.price|add_class:"form-control" }}
+        </div>
+        <div class="col-md-2 text-end">
+            <button type="button" class="btn btn-outline-danger w-100 remove-new-row-btn">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addBtn = document.getElementById('add-equipment-btn');
+    const container = document.getElementById('equipment-list-container');
+    
+    // Django всегда создает скрытое поле, заканчивающееся на TOTAL_FORMS
+    const totalForms = document.querySelector('input[name$="TOTAL_FORMS"]');
+
+    if (addBtn && totalForms) {
+        addBtn.addEventListener('click', function() {
+            let currentCount = parseInt(totalForms.value);
+            let templateHtml = document.getElementById('empty-form-template').innerHTML;
+            
+            // Заменяем __prefix__ на порядковый номер
+            // Важно: в шаблоне empty_form префикс именно такой
+            let newRowHtml = templateHtml.replace(/__prefix__/g, currentCount);
+            
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = newRowHtml;
+            container.appendChild(wrapper.firstElementChild);
+            
+            // Увеличиваем счетчик, чтобы Django знал, сколько форм обрабатывать
+            totalForms.value = currentCount + 1;
+        });
+    }
+});
+</script>
+{% endblock %}

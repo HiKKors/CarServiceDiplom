@@ -1,0 +1,100 @@
+{% extends 'autoService/menu-layout.html' %}
+{% load static %}
+
+{% block title %}
+<title>Оставить отзыв | {{ booking.service_id.name }}</title>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .star-rating {
+        font-size: 2.5rem;
+        color: #ddd;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    .star-rating .fa-star.active { color: #ffc107; }
+    .star-rating .fa-star:hover { color: #ffdb70; }
+    
+    .review-card {
+        border: none;
+        border-radius: 20px;
+        background: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            
+            <div class="card review-card shadow-lg p-4">
+                <div class="text-center mb-4">
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                        <i class="fas fa-comment-alt-heart fa-2x"></i>
+                    </div>
+                    <h2 class="fw-bold">Как вам обслуживание?</h2>
+                    <p class="text-muted">Ваш отзыв поможет сервису <strong>{{ booking.service_id.name }}</strong> стать лучше</p>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="text-center mb-4">
+                        <label class="form-label d-block text-muted small fw-bold text-uppercase">Ваша оценка</label>
+                        <div class="star-rating" id="star-container">
+                            <i class="fas fa-star" data-value="1"></i>
+                            <i class="fas fa-star" data-value="2"></i>
+                            <i class="fas fa-star" data-value="3"></i>
+                            <i class="fas fa-star" data-value="4"></i>
+                            <i class="fas fa-star" data-value="5"></i>
+                        </div>
+                        {{ form.mark }}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold text-uppercase">Ваши впечатления</label>
+                        {{ form.comment }}
+                    </div>
+
+                    <div class="alert alert-light border small text-muted mb-4">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Отзыв будет привязан к вашей записи от {{ booking.date|date:"d.m.Y" }}.
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold" style="border-radius: 12px;">
+                            Опубликовать отзыв
+                        </button>
+                        <a href="{% url 'my_bookings' %}" class="btn btn-link text-decoration-none text-muted">Позже</a>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const stars = document.querySelectorAll('#star-container .fa-star');
+    const markInput = document.querySelector('input[name="mark"]');
+
+    stars.forEach(star => {
+        star.addEventListener('click', function() {
+            const val = this.getAttribute('data-value');
+            markInput.value = val;
+            
+            // Сбрасываем все и подсвечиваем нужные
+            stars.forEach(s => s.classList.remove('active'));
+            for (let i = 0; i < val; i++) {
+                stars[i].classList.add('active');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

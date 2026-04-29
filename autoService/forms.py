@@ -3,6 +3,7 @@ from django import forms
 from django.forms import inlineformset_factory, modelformset_factory
 
 from .models import Booking, Box, Equipment, AutoService, BookingSparePart, BookingDetail, SparePart, Staff
+from UserActivity.models import Review, UserCar
 # from user.models import UserCar
 from django_select2.forms import ModelSelect2Widget, ModelSelect2TagWidget
 
@@ -51,15 +52,14 @@ class EquipmentForm(forms.ModelForm):
         fields = ('name', 'price')
 
 class BoxForm(forms.Form):
-    box_count = forms.IntegerField(widget=forms.NumberInput(attrs={
-        'class': 'service-box-number-input',
-        'name': 'service-box-number',
-        'min': 1
-    }))
-    
-    class Meta:
-        model = Box
-        fields = ('name',)
+    # Изменяем на 'count', чтобы совпадало с твоим шаблоном
+    count = forms.IntegerField(
+        label="Количество боксов",
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control form-control-lg',
+            'min': 1
+        })
+    )
 
 class SparePartWidget(ModelSelect2Widget):
     model = SparePart
@@ -86,10 +86,10 @@ class BookingForm(forms.ModelForm):
         'name': 'booking-end'
     }))
     # отфильтровать машины по id пользователя
-    # user_car_id = forms.ModelChoiceField(queryset=UserCar.objects.all(), widget=forms.Select(attrs={
-    #     'class': 'booking-user-car-select',
-    #     'name': 'booking-user-car'
-    # }))
+    user_car_id = forms.ModelChoiceField(queryset=UserCar.objects.all(), widget=forms.Select(attrs={
+        'class': 'booking-user-car-select',
+        'name': 'booking-user-car'
+    }))
     box = forms.ModelChoiceField(queryset=Box.objects.all(), widget=forms.Select(attrs={
         'class': 'booking-box-select',
         'name': 'booking-box'
@@ -98,15 +98,11 @@ class BookingForm(forms.ModelForm):
         'class': 'booking-equipment-select',
         'name': 'booking-equipment'
     }))
-    comment = forms.CharField(widget=forms.Textarea(attrs={
-        'class': 'booking-comment-input',
-        'name': 'booking-comment',
-        'placeholder': 'Введите предполагаемые работы'
-    }))
+
     
     class Meta:
         model = Booking
-        fields = ('date', 'start_time', 'end_time', 'box', 'equipment', 'comment')
+        fields = ('date', 'start_time', 'end_time', 'box', 'equipment')
         
 class BookingMainDetailForm(forms.ModelForm):
     planned_works = forms.CharField(widget=forms.Textarea(attrs={
@@ -163,7 +159,22 @@ class AddStaffForm(forms.ModelForm):
     class Meta:
         model = Staff
         fields = ('name', 'surname', 'salary')
+        
     
+class ReviewForm(forms.ModelForm):
+    mark = forms.IntegerField(widget=forms.HiddenInput()) # Скрытое поле, значение в которое запишет JS
+    comment = forms.CharField(
+        label="Ваш отзыв",
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'placeholder': 'Расскажите, как все прошло...',
+            'rows': 4
+        })
+    )
+    
+    class Meta:
+        model = Review
+        fields = ('mark', 'comment')
     
         
         
@@ -179,9 +190,9 @@ BookingSparePartFormSet = modelformset_factory(
 
 # к форме AddAutoServiceDataForm добавляем форму EquipmentForm
 EquipmentFormSet = inlineformset_factory(
-    AutoService,    # родительская модель
-    Equipment,  # дочерняя
-    form = EquipmentForm,
-    extra=1,    # Количество пустых форм, которые отображаются по умолчанию  (хз что это значит)
-    can_delete=True,  # При удалении записи, можно удалить все записи в EquipmentFormSet
+    AutoService,
+    Equipment,
+    form=EquipmentForm,
+    extra=0, # Ставим 0, чтобы пустые строки добавлялись только по кнопке
+    can_delete=True,
 )
