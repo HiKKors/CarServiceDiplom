@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
 
 from django.shortcuts import get_object_or_404
@@ -6,10 +7,16 @@ from django.db.models import Sum, Count
 
 from datetime import datetime, timedelta
 
+from openpyxl import Workbook
+
+from analytics.services import DashboardService
+
 from .forms import AddExpenseForm
 from autoService.models import AutoService, Booking
 
-from .models import Expenses, Incomes
+from .models import Expenses
+
+import json
 
 # Create your views here.
 def add_expense_view(request, service):
@@ -31,30 +38,52 @@ def add_expense_view(request, service):
         return render(request, 'analytics/expenses_managment.html', context=context)
 
 def dashboard_view(request, service):
-    total_expenses = Expenses.objects.aggregate(Sum('amount'))['amount__sum']
-    total_incomes = Incomes.objects.aggregate(Count('id'))
+    service_obj = get_object_or_404(AutoService, id=service)
     
-    service_bookings = Booking.objects.filter(service_id = service)
-    total_bookings = service_bookings.count()
-    recent_bookings = service_bookings.order_by('id')[:5]
+    # период, по дефолту 7 дней
+    days = int(request.GET.get('days', 7))
     
-    last_week = datetime.now() - timedelta(days=7)
-    daily_revenue = (
-        Booking.objects.filter(date__gte=last_week, status='completed')
-        .values('date')
-        .order_by('date')
-    )
+    analytics_service = DashboardService(service, days=days)
     
-    # Подготовка списков для JavaScript
-    labels = [d['date'].strftime('%d.%m') for d in daily_revenue]
-    values = [float(d['total']) for d in daily_revenue]
+    dashboard_data = analytics_service.get_full_dashboard_context()
+    
+    metrics_layout = [
+        ('Выручка', dashboard_data['metrics']['revenue'], 'fa-wallet', 'primary'),
+        ('Расходы', dashboard_data['metrics']['expenses'], 'fa-credit-card', 'danger'),
+        ('Прибыль', dashboard_data['metrics']['profit'], 'fa-chart-line', 'success'),
+        ('Средний чек', dashboard_data['metrics']['avg_check'], 'fa-hand-holding-usd', 'info'),
+    ]
+    
 
+    
     context = {
-        'total_expenses': total_expenses,
-        'total_bookings': total_bookings,
-        'labels': labels,
-        'values': values,
-        'recent_bookings': recent_bookings,
-        'service': service,
+        'service': service_obj,
+        'metrics': dashboard_data['metrics'],
+        'recent_bookings': dashboard_data['recent_bookings'],
+        'charts_json': json.dumps(dashboard_data['charts']),
+        'metrics_layout': metrics_layout
     }
-    return render(request, 'analytics/analytics_dashboard.html', context)
+    
+    return render(request=request, template_name='analytics/analytics_dashboard.html', context=context)
+
+def get_service_mounth_report_view(request, service):
+    print('REPORT')
+    print(service)
+    response = HttpResponse(content_type='application/ms-excel; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="report.xlsx"'
+    
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'AutoService'
+    
+    headers = ['Name', 'count']
+    ws.append(headers)
+    
+    service = AutoService.objects.get(id=service)
+    bookings = Booking.objects.filter(service_id = service).count()
+    print('count', bookings)
+    
+    ws.append([service.name, bookings])
+    
+    wb.save(response)
+    return response
