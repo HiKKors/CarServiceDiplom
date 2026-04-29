@@ -1,0 +1,44 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="UTF-8">
+    {% block title %}<title>Вход</title>{% endblock %}
+    {% block css_scripts %}
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <script src="/js/signup.js" defer></script>
+    {% endblock %}
+</head>
+{% block content %}
+<body>
+<section>
+    <h1>Вход</h1>
+    <form action="{% url 'login' %}" method="POST">
+        {% csrf_token %}
+        <div class="dialog-row">
+            <ul class="messages">
+                {% for message in messages %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="inputbox">
+            <ion-icon name="email-outline"></ion-icon>
+            {{ form.username }}
+            <label for="username">Эл. почта</label>
+        </div>
+        <div class="inputbox">
+            {{ form.password }}
+            <label for="password">Пароль</label>
+        </div>
+        <button>Вход</button>
+        <div class="register">
+            <p>Нет аккаунта?<a href="{% url 'register' %}"> Регистрация</a></p>
+        </div>
+    </form>
+</section>
+</body>
+{% endblock %}

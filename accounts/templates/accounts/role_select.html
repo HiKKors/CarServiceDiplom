@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoService Rent - Вход и регистрация</title>
+    <!-- Подключение Bootstrap 5 для стилей -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .role-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .role-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .role-card.selected {
+            border: 2px solid #0d6efd;
+            background-color: #f8f9fa;
+        }
+        .btn-group {
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <!-- Заголовок -->
+                <div class="text-center mb-5">
+                    <h1 class="display-5 fw-bold">AutoService Rent</h1>
+                    <p class="lead">Выберите тип аккаунта для продолжения</p>
+                </div>
+
+                <!-- Выбор роли -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">Я хочу:</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <!-- Карточка клиента -->
+                            <div class="col-md-6">
+                                <div class="card role-card h-100" id="clientCard">
+                                    <div class="card-body text-center">
+                                        <div class="mb-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-person-check" viewBox="0 0 16 16">
+                                                <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm1.679-4.493-1.335 2.226a.75.75 0 0 1-1.174.144l-.774-.773a.5.5 0 0 1 .708-.708l.547.548 1.17-1.951a.5.5 0 1 1 .858.514ZM11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                                                <path d="M2 13c0 1 1 1 1 1h5.256A4.493 4.493 0 0 1 8 12.5a4.49 4.49 0 0 1 1.544-3.393C9.077 9.038 8.564 9 8 9c-5 0-6 3-6 4Z"/>
+                                            </svg>
+                                        </div>
+                                        <h5 class="card-title">Арендовать бокс</h5>
+                                        <p class="card-text text-muted">Я клиент, ищу бокс для ремонта авто</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Карточка владельца -->
+                            <div class="col-md-6">
+                                <div class="card role-card h-100" id="ownerCard">
+                                    <div class="card-body text-center">
+                                        <div class="mb-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-building-gear" viewBox="0 0 16 16">
+                                                <path d="M14.763.075A.5.5 0 0 1 15 .5v15a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5V14h-1v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V10a.5.5 0 0 1 .342-.474L6 7.64V4.5a.5.5 0 0 1 .276-.447l8-4a.5.5 0 0 1 .487.022ZM6 8.694 1 10.36V15h5V8.694ZM7 15h2v-1.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5V15h2V1.309l-7 3.5V15Z"/>
+                                                <path d="M11 11.5v-1a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5Zm1.5 2h-1a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5Z"/>
+                                            </svg>
+                                        </div>
+                                        <h5 class="card-title">Сдать бокс</h5>
+                                        <p class="card-text text-muted">Я владелец автосервиса</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Кнопки действий -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="btn-group" role="group">
+                            <a href="{ % url 'login' %}" class="btn btn-outline-primary" id="loginBtn">Войти</a>
+                            <a href="{ % url 'register' %}" class="btn btn-primary" id="registerBtn">Зарегистрироваться</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Скрытая форма для передачи роли -->
+                <form id="roleForm" method="POST" action="" style="display: none;">
+                    {% csrf_token %}
+                    <input type="hidden" name="role" id="selectedRole">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипт для обработки выбора -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const clientCard = document.getElementById('clientCard');
+            const ownerCard = document.getElementById('ownerCard');
+            const loginBtn = document.getElementById('loginBtn');
+            const registerBtn = document.getElementById('registerBtn');
+            const selectedRoleInput = document.getElementById('selectedRole');
+            
+            let selectedRole = 'client'; // Роль по умолчанию
+
+            function updateButtonUrls() {
+                loginBtn.href = `{% url 'login' %}?role=${selectedRole}`;
+                registerBtn.href = `{% url 'register' %}?role=${selectedRole}`;
+            }
+
+            // Функция для выбора роли
+            function selectRole(role, card) {
+                selectedRole = role;
+                
+                // Сброс выделения
+                clientCard.classList.remove('selected');
+                ownerCard.classList.remove('selected');
+                
+                // Выделение выбранной карточки
+                card.classList.add('selected');
+                
+                // Обновление URL кнопок
+                updateButtonUrls();
+            }
+
+
+            // Обработчики событий
+            clientCard.addEventListener('click', () => selectRole('client', clientCard));
+            ownerCard.addEventListener('click', () => selectRole('admin', ownerCard));
+
+            // Инициализация
+            selectRole('client', clientCard); // Выбрать клиента по умолчанию
+        });
+    </script>
+</body>
+</html>

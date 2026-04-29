@@ -1,0 +1,55 @@
+{% load static %}
+
+{% extends "client_register.html"}
+
+{% block title %}
+<title>Регистрация администратора автосервиса</title>
+{% endblock %}
+
+{% block content %}
+<body>
+<section>
+    <h1>Регистрация для администартора</h1>
+    <form id="signupForm" action="{% url 'admin_register' %}" method="post" class="form">
+        {% csrf_token %}
+        <div class="dialog">
+            <ul class="messages">
+                {% for message in messages %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="inputbox">
+            <ion-icon name="person-outline"></ion-icon>
+            {{ form.name }}
+            <label for="name">Имя</label>
+        </div>
+        <div class="inputbox">
+            <ion-icon name="person-outline"></ion-icon>
+            {{ form.surname }}
+            <label for="surname">Фамилия</label>
+        </div>
+        <div class="inputbox">
+            <ion-icon name="mail-outline"></ion-icon>
+            {{ form.email }}
+            <label for="email">Эл. Почта</label>
+        </div>
+        <div class="inputbox">
+            <ion-icon name="lock-closed-outline"></ion-icon>
+            {{ form.password1 }}
+            <label for="password">Пароль</label>
+        </div>
+        <div class="inputbox">
+            <ion-icon name="lock-closed-outline"></ion-icon>
+            {{ form.password2 }}
+            <label for="confirmPassword">Подтверждение пароля</label>
+        </div>
+                <button id="submit" type="submit">Регистрация</button>
+        <div class="register">
+            <p>Уже есть аккаунт? <a href="{% url 'admin_login' %}">Войти</a></p>
+        </div>
+        <a href="{% url 'register' %}">Я клиент</a>
+    </form>
+</section>
+</body>
+{% endblock %}

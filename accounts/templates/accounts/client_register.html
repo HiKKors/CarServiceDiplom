@@ -1,0 +1,65 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="UTF-8">
+    {% block title %}<title>Регистрация</title>{% endblock %}
+    {% block css_scripts %}
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    {% endblock %}
+</head>
+{% block content %}
+<body>
+<section>
+    <h1>Регистрация</h1>
+    <form id="signupForm" action="{% url 'register' %}" method="post">
+        {% csrf_token %}
+        <div class="dialog">
+            <ul class="messages">
+                {% for message in messages %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="inputbox">
+            <ion-icon name="person-outline"></ion-icon>
+            {{ form.name }}
+            <label for="name">Имя</label>
+        </div>
+        <div class="inputbox">
+            <ion-icon name="person-outline"></ion-icon>
+            {{ form.surname }}
+            <label for="surname">Фамилия</label>
+        </div>
+        <div class="inputbox">
+            <ion-icon name="mail-outline"></ion-icon>
+            {{ form.email }}
+            <label for="email">Эл. Почта</label>
+        </div>
+        <div class="inputbox">
+            <ion-icon name="call-outline"></ion-icon>
+            {{ form.phone_number }}
+            <label for="phoneNumber">Номер телефона</label>
+        </div>
+        <div class="inputbox">
+            <ion-icon name="lock-closed-outline"></ion-icon>
+            {{ form.password1 }}
+            <label for="password">Пароль</label>
+        </div>
+        <div class="inputbox">
+            <ion-icon name="lock-closed-outline"></ion-icon>
+            {{ form.password2 }}
+            <label for="confirmPassword">Подтверждение пароля</label>
+        </div>
+                <button id="submit" type="submit">Регистрация</button>
+        <div class="register">
+            <p>Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a></p>
+        </div>
+        <input type="hidden" name="role" value="{{ role }}">
+    </form>
+</section>
+</body>
+{% endblock %}
