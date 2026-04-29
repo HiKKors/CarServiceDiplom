@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,6 +29,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+MESSAGE_TAGS = {
+    messages.ERROR: 'danger',
+}
+
 
 # Application definition
 
@@ -40,6 +45,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'autoService',
+    'UserActivity',
+    'widget_tweaks',
+    'analytics',
     
 ]
 
@@ -65,6 +73,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'autoService.context_processors.user_bookings',
             ],
         },
     },
@@ -78,12 +87,12 @@ WSGI_APPLICATION = 'CarServiceDiplom.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB'),
-        'USER': os.getenv('POSTGRES_USER'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': 'db',
-        'PORT': 5432,
+    'ENGINE': 'django.db.backends.postgresql',
+    'NAME': 'CarService',
+    'USER': 'postgres',
+    'PASSWORD': 'postgre108894nS',
+    'HOST': 'localhost',
+    'PORT': '5432',
     }
 }
 
@@ -106,23 +115,33 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTH_USER_MODEL = 'accounts.Client'
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'UTC'
+USE_TZ = True
+TIME_ZONE = 'Europe/Astrakhan'
+
+TIME_FORMAT = '%I:%M'
+
+USE_L10N = False
 
 USE_I18N = True
 
 USE_TZ = True
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
