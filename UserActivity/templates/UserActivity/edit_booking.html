@@ -1,0 +1,75 @@
+{% extends 'autoService/menu-layout.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0" style="border-radius: 15px;">
+                <div class="card-body p-4">
+                    <h3 class="card-title mb-4">Редактирование записи</h3>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                        {% endif %}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fw-bold">Бокс</label>
+                                {{ form.box }}
+                                <div class="text-danger small">{{ form.box.errors }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fw-bold">Дата</label>
+                                {{ form.date }}
+                                <div class="text-danger small">{{ form.date.errors }}</div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fw-bold">Время начала</label>
+                                {{ form.start_time }}
+                                <div class="text-danger small">{{ form.start_time.errors }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted fw-bold">Время окончания</label>
+                                {{ form.end_time }}
+                                <div class="text-danger small">{{ form.end_time.errors }}</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-muted fw-bold">Услуги / Оборудование</label>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                {% for checkbox in form.equipment %}
+                                    <div class="form-check">
+                                        {{ checkbox.tag }}
+                                        <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                            {{ checkbox.choice_label }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="text-danger small">{{ form.equipment.errors }}</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-muted fw-bold">Комментарий</label>
+                            {{ form.comment }}
+                            <div class="text-danger small">{{ form.comment.errors }}</div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary w-50" style="border-radius: 10px;">Сохранить</button>
+                            <a href="{% url 'my_bookings' %}" class="btn btn-outline-secondary w-50" style="border-radius: 10px;">Отмена</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

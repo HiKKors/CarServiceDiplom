@@ -1,0 +1,115 @@
+{% extends 'autoService/menu-layout.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex align-items-center mb-4 page-title">
+        <a href="{% url 'garage' %}" class="btn btn-outline-secondary rounded-circle me-3" title="Назад в гараж">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="h3 mb-0 text-dark fw-bold">История обслуживания</h1>
+            <p class="text-muted mb-0">
+                {{ car.make }} {{ car.model }} 
+                <span class="badge bg-secondary ms-2">VIN: {{ car.vin }}</span>
+            </p>
+        </div>
+    </div>
+
+    <div class="accordion shadow-sm" id="historyAccordion" style="border-radius: 15px; overflow: hidden;">
+        
+        {% for booking in bookings %}
+            {% with detail=booking.bookingdetail_set.first %}
+            <div class="accordion-item border-0 border-bottom">
+                <h2 class="accordion-header" id="heading{{ booking.id }}">
+                    <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" 
+                            type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#collapse{{ booking.id }}" 
+                            aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" 
+                            aria-controls="collapse{{ booking.id }}"
+                            style="background-color: #fff;">
+                        
+                        <div class="d-flex justify-content-between align-items-center w-100 pe-3">
+                            <div>
+                                <strong class="text-primary d-block mb-1">
+                                    <i class="far fa-calendar-alt me-1"></i> {{ booking.date }} 
+                                    <span class="text-muted ms-2 fw-normal" style="font-size: 0.9em;">{{ booking.start_time|time:"H:i" }}</span>
+                                </strong>
+                                <span class="text-dark"><i class="fas fa-wrench me-1 text-muted"></i> {{ booking.service_id.name }}</span>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-light text-dark border mb-1">
+                                    Пробег: {% if detail %}{{ detail.mileage }} км{% else %}Нет данных{% endif %}
+                                </span>
+                                <strong class="d-block text-success">{{ booking.total_price }} ₽</strong>
+                            </div>
+                        </div>
+                    </button>
+                </h2>
+                
+                <div id="collapse{{ booking.id }}" 
+                     class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                     aria-labelledby="heading{{ booking.id }}" 
+                     data-bs-parent="#historyAccordion">
+                    <div class="accordion-body bg-light">
+                        <div class="row">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <h6 class="fw-bold text-secondary mb-3"><i class="fas fa-clipboard-list me-2"></i>Выполненные работы</h6>
+                                
+                                {% if booking.equipment.all %}
+                                    <ul class="list-group list-group-flush mb-3 shadow-sm rounded">
+                                        {% for eq in booking.equipment.all %}
+                                            <li class="list-group-item d-flex justify-content-between align-items-center bg-white border-bottom-0">
+                                                {{ eq.name }}
+                                                <span class="text-muted small">{{ eq.price }} ₽/ч</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+
+                                {% if detail.planned_works %}
+                                    <div class="p-3 bg-white rounded shadow-sm border-start border-4 border-primary">
+                                        <small class="text-muted d-block fw-bold mb-1">Комментарий мастера / Детали:</small>
+                                        <p class="mb-0 small">{{ detail.planned_works }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6">
+                                <h6 class="fw-bold text-secondary mb-3"><i class="fas fa-cogs me-2"></i>Запчасти и материалы</h6>
+                                
+                                {% if detail.bookingsparepart_set.all %}
+                                    <ul class="list-group list-group-flush shadow-sm rounded">
+                                        {% for sp in detail.bookingsparepart_set.all %}
+                                            <li class="list-group-item d-flex justify-content-between align-items-start bg-white border-bottom-0">
+                                                <div class="ms-2 me-auto">
+                                                    <div class="fw-bold text-dark">{{ sp.part.name }}</div>
+                                                    <small class="text-muted">Артикул: {{ sp.part.article|default:"---" }}</small>
+                                                </div>
+                                                <span class="badge bg-secondary rounded-pill">{{ sp.quantity }} шт.</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <div class="alert alert-secondary text-center small py-2 mb-0 border-0">
+                                        Свои запчасти не использовались
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endwith %}
+        {% empty %}
+            <div class="text-center py-5 bg-white">
+                <i class="fas fa-history fa-4x text-muted mb-3 opacity-50"></i>
+                <h4 class="text-secondary">История обслуживания пуста</h4>
+                <p class="text-muted">Вы еще не завершили ни одного ремонта для этого автомобиля.</p>
+                <a href="{% url 'main' %}" class="btn btn-primary mt-2">Записаться в сервис</a>
+            </div>
+        {% endfor %}
+        
+    </div>
+</div>
+{% endblock %}

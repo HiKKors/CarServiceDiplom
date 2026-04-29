@@ -1,0 +1,175 @@
+{% extends 'autoService/menu-layout.html' %}
+
+{% block content %}
+<div class="container-fluid p-0 py-4 px-xl-5">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4" style="border-bottom: 2px solid #dee2e6; padding-bottom: 20px;">
+        <h1 class="h2 mb-0 fw-bold text-dark">Мои записи</h1>
+        <a href="{% url 'main' %}" class="btn btn-primary" style="border-radius: 10px;">
+            <i class="fas fa-plus me-2"></i>Записаться
+        </a>
+    </div>
+
+    <ul class="nav nav-pills mb-4 gap-2" id="bookingTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active rounded-pill px-4" id="upcoming-tab" data-bs-toggle="pill" data-bs-target="#upcoming" type="button" role="tab">
+                Активные <span class="badge bg-white text-primary ms-1">{{ upcoming_bookings|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-4" id="completed-tab" data-bs-toggle="pill" data-bs-target="#completed" type="button" role="tab">
+                Завершенные
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill px-4" id="cancelled-tab" data-bs-toggle="pill" data-bs-target="#cancelled" type="button" role="tab">
+                Отмененные
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="bookingTabsContent">
+        
+        <div class="tab-pane fade show active" id="upcoming" role="tabpanel" tabindex="0">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+                {% for booking in upcoming_bookings %}
+                    {% include 'UserActivity/includes/booking_card.html' with booking=booking is_active=True %}
+                {% empty %}
+                    <div class="col-12 text-center py-5 w-100">
+                        <i class="fas fa-calendar-check fa-4x text-muted opacity-50 mb-3"></i>
+                        <h4 class="text-secondary">У вас нет предстоящих записей</h4>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="completed" role="tabpanel" tabindex="0">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+                {% for booking in completed_bookings %}
+                    {% include 'UserActivity/includes/booking_card.html' with booking=booking is_active=False %}
+                {% empty %}
+                    <div class="col-12 text-center py-5 w-100">
+                        <p class="text-muted">Завершенных записей пока нет.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="cancelled" role="tabpanel" tabindex="0">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+                {% for booking in cancelled_bookings %}
+                    {% include 'UserActivity/includes/booking_card.html' with booking=booking is_active=False %}
+                {% empty %}
+                    <div class="col-12 text-center py-5 w-100">
+                        <p class="text-muted">Отмененных записей нет.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="completeBookingModal" tabindex="-1" aria-labelledby="completeBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 15px; border: none;">
+            
+            <div class="modal-header bg-light" style="border-radius: 15px 15px 0 0; border-bottom: 1px solid #dee2e6;">
+                <h5 class="modal-title fw-bold text-dark" id="completeBookingModalLabel">
+                    <i class="fas fa-flag-checkered text-success me-2"></i>Завершение обслуживания
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            
+            <form id="completeBookingForm" method="POST" action="">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <p class="text-muted mb-4">
+                        Вы завершаете обслуживание автомобиля <strong id="modalCarName" class="text-dark">Авто</strong>. 
+                        Для корректной работы умного гаража, пожалуйста, укажите актуальный пробег.
+                    </p>
+                    
+                    <div class="mb-3">
+                        <label for="mileageInput" class="form-label fw-bold text-muted small text-uppercase">Текущий пробег (км)</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-white text-muted"><i class="fas fa-tachometer-alt"></i></span>
+                            <input type="number" class="form-control" id="mileageInput" name="mileage" placeholder="Например: 125000" required min="0" step="1">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer bg-light" style="border-radius: 0 0 15px 15px; border-top: none;">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">Отмена</button>
+                    <button type="submit" class="btn btn-success px-4" style="border-radius: 8px;">
+                        <i class="fas fa-save me-1"></i> Сохранить и завершить
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cancelModal = document.getElementById('deleteModal');
+    if (cancelModal) {
+        cancelModal.addEventListener('show.bs.modal', function (event) {
+            // Кнопка, по которой кликнули
+            const button = event.relatedTarget;
+            
+            // Забираем данные из data-атрибутов
+            const cancelUrl = button.getAttribute('data-cancel-url');
+            const isFree = button.getAttribute('data-is-free') === 'true';
+            const fee = button.getAttribute('data-fee');
+            
+            // Находим форму и текст
+            const form = document.getElementById('cancelForm');
+            const messageObj = document.getElementById('cancelModalMessage');
+            
+            // Устанавливаем URL для отправки (куда полетит POST запрос)
+            form.action = cancelUrl;
+            
+            // Меняем текст в зависимости от штрафа
+            if (isFree) {
+                messageObj.innerHTML = "Вы уверены, что хотите отменить эту запись?<br><span class='text-success fw-bold'>Это действие абсолютно бесплатно.</span>";
+            } else {
+                messageObj.innerHTML = `<strong>Внимание!</strong> До начала вашей записи осталось менее 12 часов.<br><br>При отмене будет удержан <span class="text-danger fw-bold">штраф в размере ${fee} ₽</span>.<br>Вы точно хотите отменить?`;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const completeModal = document.getElementById('completeBookingModal');
+        
+        if (completeModal) {
+            completeModal.addEventListener('show.bs.modal', function(event) {
+                // Кнопка, которая открыла модалку
+                const button = event.relatedTarget;
+                
+                // Достаем данные из кнопки
+                const bookingId = button.getAttribute('data-booking-id');
+                const carName = button.getAttribute('data-car-name');
+                
+                // Находим элементы в модалке
+                const form = document.getElementById('completeBookingForm');
+                const carNameDisplay = document.getElementById('modalCarName');
+                
+                // Собираем правильный URL для отправки формы 
+                // (убедись, что путь '/booking/.../complete/' совпадает с твоим urls.py)
+                form.action = `/user/booking/${bookingId}/complete/`;
+                
+                // Пишем название машины в текст
+                carNameDisplay.textContent = carName;
+            });
+        }
+    });
+</script>
+{% endblock %}

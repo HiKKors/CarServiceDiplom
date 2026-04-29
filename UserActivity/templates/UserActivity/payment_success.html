@@ -1,0 +1,33 @@
+{% extends 'autoService/menu-layout.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="card border-0 shadow-lg p-5" style="border-radius: 25px;">
+                <div class="mb-4">
+                    <div class="bg-success-soft d-inline-flex align-items-center justify-content-center rounded-circle" style="width: 100px; height: 100px; background-color: #e6f4ea;">
+                        <i class="fas fa-check text-success" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+                
+                <h2 class="fw-bold text-dark mb-2">Оплата принята!</h2>
+                <p class="text-secondary mb-4">Бронирование №{{ booking.id }} успешно завершено. Денежные средства списаны, бокс освобожден.</p>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'generate_pdf' booking.id %}" class="btn btn-primary btn-lg rounded-pill shadow-sm">
+                        <i class="fas fa-file-pdf me-2"></i>Скачать чек (PDF)
+                    </a>
+                    <a href="{% url 'my_bookings' %}" class="btn btn-outline-secondary btn-lg rounded-pill">
+                        Вернуться в личный кабинет
+                    </a>
+                </div>
+                
+                <div class="mt-4 pt-4 border-top">
+                    <small class="text-muted">Если чек не скачивается, обратитесь к администратору сервиса.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

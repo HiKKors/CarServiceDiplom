@@ -1,35 +1,185 @@
 {% extends 'autoService/menu-layout.html' %}
-
 {% load static %}
 
 {% block styles %}
-<link rel="stylesheet" href="{% static 'css/garage.css' %}">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    /* Стили в духе страницы бронирований */
+    body { background-color: #f4f7f6; }
+    
+    .page-title {
+        border-bottom: 2px solid #dee2e6;
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .car-card {
+        transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        background: #fff;
+    }
+    
+    .car-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+    }
+    
+    .car-icon-wrapper {
+        width: 60px;
+        height: 60px;
+        background-color: #f8faff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h1>Гараж</h1>
-    {% for car in user_cars %}
-        <div class="user-car row">
-            <div class="make-model-year">
-                <span>{{ car.make }} {{ car.model }} {{ car.year }}</span>
-            </div>
-            <div class="vin">
-                <p>{{ car.vin }}</p>
-            </div>
-            <div class="action">
-                <a class="btn btn-primary">Посмотреть историю обслуживания</a>  <!-- не забудь у тебя для машины pk это вин -->
-                <button class="btn btn-danger">Удалить</button>
-                <a class="btn btn-warning">Редактировать</a>
-            </div>
+<div class="container-fluid px-0 py-2">
+    
+    <div class="d-flex justify-content-between align-items-center page-title">
+        <div>
+            <h1 class="h2 mb-0 fw-bold text-dark">Мой Гараж</h1>
+            <p class="text-muted mb-0 mt-1">Управление вашими автомобилями</p>
         </div>
-    {% endfor %}
-    <a href="{% url 'add_car' %}" class="add-user-car-link">Добавить автомобиль</a>
+        <a href="{% url 'add_car' %}" class="btn btn-primary px-4 py-2" style="border-radius: 10px;">
+            <i class="fas fa-plus me-2"></i>Добавить авто
+        </a>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for car in user_cars %}
+            {% if car.oil_status %}
+                <div class="mt-4 p-3 bg-light rounded-3 border">
+                    <div class="d-flex justify-content-between align-items-end mb-2">
+                        <div>
+                            <span class="text-muted small fw-bold text-uppercase"><i class="fas fa-oil-can text-primary me-1"></i> Замена масла</span>
+                            {% if car.oil_status.needs_change %}
+                                <div class="text-danger fw-bold small mt-1">Пора менять!</div>
+                            {% else %}
+                                <div class="text-success fw-bold small mt-1">Осталось {{ car.oil_status.remaining_km }} км</div>
+                            {% endif %}
+                        </div>
+                        <div class="text-muted small">
+                            {{ car.oil_status.current_mileage }} / {{ car.oil_status.last_changed_at|add:"10000" }} км
+                        </div>
+                    </div>
+                    
+                    <div class="progress" style="height: 8px; border-radius: 4px;">
+                        <div class="progress-bar 
+                            {% if car.oil_status.needs_change %}bg-danger
+                            {% elif car.oil_status.percentage > 75 %}bg-warning
+                            {% else %}bg-success{% endif %}" 
+                            role="progressbar" 
+                            style="width: {{ car.oil_status.percentage|stringformat:'f'|slice:':-4' }}%;" 
+                            aria-valuenow="{{ car.oil_status.percentage }}" 
+                            aria-valuemin="0" 
+                            aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="col">
+                <div class="card car-card shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="car-icon-wrapper text-primary">
+                                <i class="fas fa-car-side fa-2x"></i>
+                            </div>
+                            <span class="badge bg-light text-secondary border">VIN: {{ car.vin }}</span>
+                        </div>
+                        
+                        <h4 class="card-title fw-bold text-dark mb-1">
+                            {{ car.make }} {{ car.model }}
+                        </h4>
+                        <p class="text-muted mb-4">Год выпуска: <strong>{{ car.year|default:"Не указан" }}</strong></p>
+                        <p class="text-muted mb-4"> Пробег: <strong>{{ car.current_mileage|default:"Не указан" }}</strong></p>
+                        <div class="d-grid mb-3">
+                            <a href="{% url 'car_service_history' car.vin %}" class="btn btn-outline-primary" style="border-radius: 10px;">
+                                <i class="fas fa-history me-2"></i>История обслуживания
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer bg-white border-top-0 p-4 pt-0 d-flex gap-2">
+                        <a href="{% url 'edit_car' car.vin %}" class="btn btn-light text-primary w-50" style="border-radius: 10px;">
+                            <i class="fas fa-pen"></i> Изменить
+                        </a>
+                        
+                        <button type="button" 
+                                class="btn btn-light text-danger w-50" 
+                                style="border-radius: 10px;"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deleteCarModal"
+                                data-delete-url="{% url 'delete_car' car.vin %}"
+                                data-car-name="{{ car.make }} {{ car.model }}">
+                            <i class="fas fa-trash"></i> Удалить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12 text-center py-5">
+                <div class="p-5 bg-white shadow-sm rounded-4 text-muted border">
+                    <i class="fas fa-warehouse fa-4x mb-3 opacity-50"></i>
+                    <h3 class="text-dark">Ваш гараж пуст</h3>
+                    <p>Добавьте свой первый автомобиль, чтобы начать записываться на обслуживание.</p>
+                    <a href="{% url 'add_car' %}" class="btn btn-primary btn-lg mt-3 px-5" style="border-radius: 12px;">
+                        <i class="fas fa-plus me-2"></i>Добавить автомобиль
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
 </div>
 
-<!-- 
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> -->
+<div class="modal fade" id="deleteCarModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 15px;">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger">Удаление автомобиля</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Вы действительно хотите удалить <strong id="modalCarName" class="text-dark"></strong> из гаража? 
+                <br><br>
+                <span class="text-muted small"><i class="fas fa-info-circle me-1"></i> История обслуживания этого автомобиля может быть скрыта или потеряна.</span>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 10px;">Отмена</button>
+                <form id="deleteCarForm" method="POST" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger" style="border-radius: 10px;">Да, удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var deleteModal = document.getElementById('deleteCarModal');
+        
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                
+                // Получаем данные из кнопки
+                var deleteUrl = button.getAttribute('data-delete-url');
+                var carName = button.getAttribute('data-car-name');
+                
+                // Настраиваем форму и текст
+                var deleteForm = document.getElementById('deleteCarForm');
+                var modalCarName = document.getElementById('modalCarName');
+                
+                deleteForm.action = deleteUrl; 
+                modalCarName.innerText = carName;
+            });
+        }
+    });
+</script>
 {% endblock %}

@@ -1,0 +1,116 @@
+{% extends 'autoService/menu-layout.html' %}
+
+{% block content %}
+<div class="container-fluid p-0 py-4 px-xl-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            
+            <div class="d-flex align-items-center mb-4">
+                <a href="{% url 'garage' %}" class="btn btn-outline-secondary rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="h3 mb-0 fw-bold text-dark">
+                        {% if object %}Редактирование авто{% else %}Новый автомобиль{% endif %}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        {% if object %}{{ object.make }} {{ object.model }}{% else %}Заполните данные вашей машины{% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0" style="border-radius: 15px;">
+                <div class="card-body p-4 p-md-5">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" style="border-radius: 10px;">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <label class="form-label fw-bold text-muted small text-uppercase">{{ form.vin.label }}</label>
+                                {{ form.vin }}
+                                {% if form.vin.errors %}
+                                    <div class="text-danger small mt-1">{{ form.vin.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-4">
+                                <label class="form-label fw-bold text-muted small text-uppercase">{{ form.make.label }}</label>
+                                {{ form.make }}
+                                {% if form.make.errors %}
+                                    <div class="text-danger small mt-1">{{ form.make.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-4">
+                                <label class="form-label fw-bold text-muted small text-uppercase">{{ form.model.label }}</label>
+                                {{ form.model }}
+                                {% if form.model.errors %}
+                                    <div class="text-danger small mt-1">{{ form.model.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-4">
+                                <label class="form-label fw-bold text-muted small text-uppercase">{{ form.generation.label }}</label>
+                                {{ form.generation }}
+                                {% if form.generation.errors %}
+                                    <div class="text-danger small mt-1">{{ form.generation.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-4">
+                                <label class="form-label fw-bold text-muted small text-uppercase">{{ form.year.label }}</label>
+                                {{ form.year }}
+                                {% if form.year.errors %}
+                                    <div class="text-danger small mt-1">{{ form.year.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-4">
+                                <label class="form-label fw-bold text-muted small text-uppercase">{{ form.engine_capacity.label }}</label>
+                                {{ form.engine_capacity }}
+                                {% if form.engine_capacity.errors %}
+                                    <div class="text-danger small mt-1">{{ form.engine_capacity.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-4">
+                                <label class="form-label fw-bold text-muted small text-uppercase">{{ form.power.label }}</label>
+                                {{ form.power }}
+                                {% if form.power.errors %}
+                                    <div class="text-danger small mt-1">{{ form.power.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <label class="form-label fw-bold text-muted small text-uppercase">{{ form.current_mileage.label }}</label>
+                                {{ form.current_mileage }}
+                                {% if form.current_mileage.errors %}
+                                    <div class="text-danger small mt-1">{{ form.current_mileage.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <hr class="my-4 text-muted">
+
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg flex-grow-1" style="border-radius: 12px;">
+                                {% if object %}
+                                    <i class="fas fa-save me-2"></i>Сохранить изменения
+                                {% else %}
+                                    <i class="fas fa-plus me-2"></i>Добавить в гараж
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
