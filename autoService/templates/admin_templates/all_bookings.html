@@ -46,10 +46,37 @@
 
 {% block content %}
 <div class="container-fluid p-0 py-4 px-xl-5">
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
     
     <div class="mb-4">
         <h1 class="h2 mb-0 fw-bold text-dark">Журнал записей</h1>
         <p class="text-muted mt-1">Просмотр и управление всеми бронированиями в ваших сервисах</p>
+    </div>
+
+    <div class="dropdown">
+        <button class="btn btn-primary btn-lg rounded-pill shadow-sm dropdown-toggle fw-bold" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-plus-circle me-2"></i>Создать запись
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg" style="border-radius: 12px;">
+            <li class="dropdown-header text-uppercase fw-bold small">Выберите сервис:</li>
+            {% for service in request.user.autoservice_set.all %}
+                <li>
+                    <a class="dropdown-item py-2" href="{% url 'admin_create_booking' service.id %}">
+                        <i class="fas fa-warehouse text-muted me-2"></i>{{ service.name }}
+                    </a>
+                </li>
+            {% empty %}
+                <li><span class="dropdown-item py-2 text-muted">У вас пока нет сервисов</span></li>
+            {% endfor %}
+        </ul>
     </div>
 
     <div class="card filter-card shadow-sm mb-4">
@@ -139,7 +166,7 @@
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="border-radius: 10px;">
-                                    <li><a class="dropdown-item py-2" href="{% url 'edit_booking' booking.id %}"><i class="fas fa-edit me-2 text-muted"></i> Изменить</a></li>
+                                    <li><a class="dropdown-item py-2" href="{% url 'edit_booking_admin' booking.id %}"><i class="fas fa-edit me-2 text-muted"></i> Изменить</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><button class="dropdown-item py-2 text-danger" onclick="confirmDelete('{{ booking.id }}')"><i class="fas fa-trash-alt me-2"></i> Удалить</button></li>
                                 </ul>
@@ -187,8 +214,11 @@
     function confirmDelete(bookingId) {
         const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
         const form = document.getElementById('deleteForm');
-        // Здесь подставь свой URL для удаления, например:
-        form.action = `/delete-booking/${bookingId}/`; 
+        
+        // Используем базовый URL и подставляем ID динамически
+        let baseUrl = "{% url 'admin_delete_booking' 0 %}";
+        form.action = baseUrl.replace('0', bookingId);
+        
         modal.show();
     }
 </script>

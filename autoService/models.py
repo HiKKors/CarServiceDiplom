@@ -24,7 +24,7 @@ class AutoService(models.Model):
     owner = models.ForeignKey(to='accounts.Client', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     description = models.TextField(max_length=500)
-    address = models.CharField(max_length=100)
+    address = models.CharField(max_length=100, unique=True)
     workingHours = models.CharField(max_length=100)
     workingDays = models.ManyToManyField(WeekDays, related_name='working_days')
     
@@ -40,12 +40,12 @@ class AutoService(models.Model):
             
         return slots
     
-    def get_availability_for_date(self, target_date):
+    def get_availability_for_date(self, target_date, service_id):
         boxes = self.box_set.filter(is_opened=True)
         time_slots = self.get_working_hours()
         table = {box.id: {slot: 'free' for slot in time_slots} for box in boxes}
         
-        bookings = Booking.objects.filter(date = target_date).select_related('box')
+        bookings = Booking.objects.filter(service_id=service_id).filter(date = target_date).select_related('box')
         
         for book in bookings:
             for slot in time_slots:
@@ -115,7 +115,7 @@ class Booking(models.Model):
     
     id = models.AutoField(primary_key=True)
     service_id = models.ForeignKey(to='AutoService', on_delete=models.CASCADE)
-    user_id = models.ForeignKey(to='accounts.Client', on_delete=models.CASCADE)
+    user_id = models.ForeignKey(to='accounts.Client', on_delete=models.CASCADE, null=True, blank=True)
     user_car = models.ForeignKey(to='UserActivity.UserCar', on_delete=models.CASCADE, null=True, blank=True)
     date = models.DateField(verbose_name='Дата')
     start_time = models.TimeField()
@@ -129,7 +129,8 @@ class Booking(models.Model):
         RepairCategory, 
         on_delete=models.SET_NULL, 
         null=True, 
-        verbose_name="Категория работ"
+        verbose_name="Категория работ",
+        blank=True
     )
     
     total_price = models.IntegerField(default=0)  
@@ -137,11 +138,15 @@ class Booking(models.Model):
     payment_id = models.CharField(max_length=100, null=True, blank=True, verbose_name="ID платежа ЮKassa")
     arrived_at = models.DateTimeField(null=True, blank=True, verbose_name="Время заезда")
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Время выезда")
-    has_penalty = models.BooleanField(default=False, verbose_name="Штраф за опоздание")
-    extra_time_minutes = models.PositiveIntegerField(default=0, verbose_name="Перерасход времени (мин)")
+    has_penalty = models.BooleanField(default=False, verbose_name="Штраф за опоздание", null=True, blank=True)
+    extra_time_minutes = models.PositiveIntegerField(default=0, verbose_name="Перерасход времени (мин)", null=True, blank=True)
     
     
     status = models.CharField(max_length=20, choices=BookStatus.choices, default=BookStatus.PENDING)
+    
+    handle_booking = models.BooleanField(default=False)
+    name = models.CharField(max_length=64, verbose_name='Имя для ручного бронирования', null=True, blank=True)
+    phone_number = models.CharField(max_length=11, unique=True, null=True)
     
     def start_session(self):
         """Логика НАЧАЛА обслуживания"""
@@ -183,7 +188,6 @@ class Booking(models.Model):
             extra_time = now - end_dt
             extra_minutes = int(extra_time.total_seconds() / 60)
             # Здесь можно генерировать доп. счет, но пока просто логируем
-            print(f"Клиент {self.user_id} пересидел на {extra_minutes} минут.")
             
         # Обновление пробега, если он передан
         if mileage_data and self.user_car:
@@ -264,7 +268,7 @@ class Booking(models.Model):
     
 class BookingDetail(models.Model):
     booking = models.ForeignKey(to="Booking", on_delete=models.CASCADE)
-    mileage = models.IntegerField()
+    # mileage = models.IntegerField()
     planned_works = models.TextField() # предполагаемые работы
     parts = models.ManyToManyField(to='SparePart', through='BookingSparePart')
     

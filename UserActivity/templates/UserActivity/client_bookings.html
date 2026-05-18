@@ -2,6 +2,15 @@
 
 {% block content %}
 <div class="container-fluid p-0 py-4 px-xl-5">
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %} 
     
     <div class="d-flex justify-content-between align-items-center mb-4" style="border-bottom: 2px solid #dee2e6; padding-bottom: 20px;">
         <h1 class="h2 mb-0 fw-bold text-dark">Мои записи</h1>
@@ -27,6 +36,7 @@
             </button>
         </li>
     </ul>
+
 
     <div class="tab-content" id="bookingTabsContent">
         
@@ -69,46 +79,59 @@
 
     </div>
 </div>
-
-<div class="modal fade" id="completeBookingModal" tabindex="-1" aria-labelledby="completeBookingModalLabel" aria-hidden="true">
+<div class="modal fade" id="completeBookingModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 15px; border: none;">
-            
-            <div class="modal-header bg-light" style="border-radius: 15px 15px 0 0; border-bottom: 1px solid #dee2e6;">
-                <h5 class="modal-title fw-bold text-dark" id="completeBookingModalLabel">
-                    <i class="fas fa-flag-checkered text-success me-2"></i>Завершение обслуживания
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold">Завершение обслуживания</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            
-            <form id="completeBookingForm" method="POST" action="">
+            <form id="completeBookingForm" method="POST">
                 {% csrf_token %}
-                <div class="modal-body p-4">
-                    <p class="text-muted mb-4">
-                        Вы завершаете обслуживание автомобиля <strong id="modalCarName" class="text-dark">Авто</strong>. 
-                        Для корректной работы умного гаража, пожалуйста, укажите актуальный пробег.
-                    </p>
+                <div class="modal-body px-4">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %} 
+                    
+                    <p class="text-muted">Вы завершаете работу над автомобилем <span id="modalCarName" class="fw-bold text-dark"></span>.</p>
                     
                     <div class="mb-3">
-                        <label for="mileageInput" class="form-label fw-bold text-muted small text-uppercase">Текущий пробег (км)</label>
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text bg-white text-muted"><i class="fas fa-tachometer-alt"></i></span>
-                            <input type="number" class="form-control" id="mileageInput" name="mileage" placeholder="Например: 125000" required min="0" step="1">
+                        <label for="mileage" class="form-label small fw-bold text-uppercase text-secondary">Текущий пробег (км)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="fas fa-tachometer-alt text-primary"></i></span>
+                            <input type="number" name="mileage" id="mileage" class="form-control border-0 bg-light py-2" placeholder="Введите пробег...">
+                        </div>
+                        <div id="mileageHelp" class="form-text mt-2">Пробег нужен для отслеживания состояния масла и ТО.</div>
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3 mb-6">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <span class="text-muted small">Стоимость аренды:</span>
+                            <span class="fw-bold text-dark">{{ booking.total_price }} ₽</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Статус оплаты:</span>
+                            <span class="badge bg-warning-soft text-warning">Ожидает оплаты</span>
                         </div>
                     </div>
                 </div>
-                
-                <div class="modal-footer bg-light" style="border-radius: 0 0 15px 15px; border-top: none;">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius: 8px;">Отмена</button>
-                    <button type="submit" class="btn btn-success px-4" style="border-radius: 8px;">
-                        <i class="fas fa-save me-1"></i> Сохранить и завершить
+                <div class="modal-footer border-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                        <i class="fas fa-credit-card me-2"></i>Перейти к оплате
                     </button>
                 </div>
             </form>
-
         </div>
     </div>
 </div>
+
+
 
 
 
@@ -170,6 +193,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 carNameDisplay.textContent = carName;
             });
         }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Находим ВСЕ таймеры на странице
+        const timers = document.querySelectorAll('.session-timer');
+        
+        if (timers.length === 0) return; // Если активных броней нет, ничего не делаем
+
+        function updateTimers() {
+            const now = new Date().getTime();
+
+            timers.forEach(timerContainer => {
+                const timerText = timerContainer.querySelector('.timer-text');
+                const endTimeString = timerContainer.getAttribute('data-end-time');
+                const endTime = new Date(endTimeString).getTime();
+                
+                const diff = endTime - now;
+
+                if (diff > 0) {
+                    // ВРЕМЯ ЕЩЕ ЕСТЬ
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                    timerText.innerText = `Осталось: ${hours}ч ${minutes}м ${seconds}с`;
+                    timerContainer.className = 'session-timer text-center mb-2 badge bg-success w-100 py-2 fs-6 shadow-sm';
+                } else {
+                    // ВРЕМЯ ВЫШЛО (Перерасход)
+                    const overDiff = Math.abs(diff);
+                    const overHours = Math.floor((overDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const overMinutes = Math.floor((overDiff % (1000 * 60 * 60)) / (1000 * 60));
+                    const overSeconds = Math.floor((overDiff % (1000 * 60)) / 1000);
+
+                    timerText.innerText = `Задержка: ${overHours}ч ${overMinutes}м ${overSeconds}с`;
+                    // Добавляем красную заливку и анимацию (если подключен animate.css, она будет мигать)
+                    timerContainer.className = 'session-timer text-center mb-2 badge bg-danger w-100 py-2 fs-6 shadow-sm animate__animated animate__pulse animate__infinite';
+                }
+            });
+        }
+
+        // Запускаем сразу и обновляем каждую секунду
+        updateTimers();
+        setInterval(updateTimers, 1000);
     });
 </script>
 {% endblock %}

@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     UserGarageVeiw, CustomLogoutView,
     UserBookingsView, Profile, ClientAbandonBookingsView, EditBookingView, CarServiceHistory, CarDeleteView, CarUpdateView, CarCreateView,
-    complete_booking_and_pay, start_booking
+    complete_booking_and_pay, start_booking, generate_receipt_pdf, payment_success
 )
 
 urlpatterns = [
@@ -18,4 +18,6 @@ urlpatterns = [
     path('garage/delete/<str:vin>/', CarDeleteView.as_view(), name='delete_car'),
     path('booking/<int:booking_id>/complete/', complete_booking_and_pay, name='complete_booking'),
     path('booking/<int:booking_id>/start/', start_booking, name='start_booking'),
+    path('booking/<int:booking_id>/success/', payment_success, name='payment_success'),
+    path('booking/<int:booking_id>/receipt/', generate_receipt_pdf, name='generate_pdf'),
 ]

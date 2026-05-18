@@ -58,6 +58,11 @@ class UserCarForm(forms.ModelForm):
             'power': 'Мощность (л.с.)',
             'current_mileage': 'Пробег (км)',
         }
+        error_messages = {
+            'vin': {
+                'unique': 'Автомобиль с таким VIN-номером уже есть в базе.',
+            }
+        }
         
 class EditBookingForm(forms.ModelForm):
     date = forms.DateField(widget=forms.DateInput(attrs={

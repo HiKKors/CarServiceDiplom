@@ -26,11 +26,13 @@ class AddAutoServiceDataForm(forms.ModelForm):
     }))
     start_working_time = forms.CharField(required=True, widget=forms.TextInput(attrs={
         'class': 'service-start-working-time-input',
-        'name': 'service-start-working-time'
+        'name': 'service-start-working-time',
+        'min': '0'
     }))
-    end_working_time = forms.CharField(required=True, widget=forms.TextInput(attrs={
+    end_working_time = forms.CharField(required=True, widget=forms.TimeInput(attrs={
         'class': 'service-end-working-time-input',
-        'name': 'service-end-working-time'
+        'name': 'service-end-working-time',
+        'min': '0'
     }))
     
     class Meta:
@@ -86,7 +88,7 @@ class BookingForm(forms.ModelForm):
         'name': 'booking-end'
     }))
     # отфильтровать машины по id пользователя
-    user_car_id = forms.ModelChoiceField(queryset=UserCar.objects.all(), widget=forms.Select(attrs={
+    user_car_id = forms.ModelChoiceField(queryset=UserCar.objects.all(), required=False, widget=forms.Select(attrs={
         'class': 'booking-user-car-select',
         'name': 'booking-user-car'
     }))
@@ -102,7 +104,7 @@ class BookingForm(forms.ModelForm):
     
     class Meta:
         model = Booking
-        fields = ('date', 'start_time', 'end_time', 'box', 'equipment')
+        fields = ('date', 'start_time', 'end_time', 'box', 'equipment', 'user_car_id')
         
 class BookingMainDetailForm(forms.ModelForm):
     planned_works = forms.CharField(widget=forms.Textarea(attrs={
@@ -111,15 +113,9 @@ class BookingMainDetailForm(forms.ModelForm):
     })
     )
     
-    mileage = forms.IntegerField(widget=forms.NumberInput(attrs={
-        'class': 'booking-mileage-input',
-        'placeholder': 'Введите пробег на данный момент',
-    })
-    )
-    
     class Meta:
         model = BookingDetail
-        fields = ('planned_works', 'mileage',)
+        fields = ('planned_works',)
         
 class BookingSparePartForm(forms.ModelForm):
         model = BookingSparePart
@@ -175,6 +171,50 @@ class ReviewForm(forms.ModelForm):
     class Meta:
         model = Review
         fields = ('mark', 'comment')
+        
+class EditBookingForm(forms.ModelForm):
+    class Meta:
+        model = Booking
+        fields = ['date', 'start_time', 'end_time', 'box', 'status']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'box': forms.Select(attrs={'class': 'form-select'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+        }
+        labels = {
+            'date': 'Дата записи',
+            'start_time': 'Время начала',
+            'end_time': 'Время окончания',
+            'box': 'Номер бокса',
+            'status': 'Статус',
+        }
+
+    def __init__(self, *args, **kwargs):
+        # Вытаскиваем service_id, чтобы отфильтровать боксы
+        service_id = kwargs.pop('service_id', None)
+        super().__init__(*args, **kwargs)
+        
+        if service_id:
+            self.fields['box'].queryset = Box.objects.filter(service_id=service_id)
+            
+
+from django import forms
+from autoService.models import Booking, Box, Equipment
+from UserActivity.models import UserCar
+
+class AdminCreateBookingForm(forms.ModelForm):
+    equipment = forms.ModelMultipleChoiceField(
+        queryset=Equipment.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Оборудование"
+    )
+
+    class Meta:
+        model = Booking
+        fields = ['name', 'phone_number', 'date', 'start_time', 'end_time', 'box', 'equipment']
     
         
         

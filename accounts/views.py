@@ -92,7 +92,7 @@ def client_register_view(request):
             
             # авторизация после регистрации
             login(request, client)
-            messages.success(request=request, message='Вы успешно зарегистрировались!')
+            messages.success(request=request, message=f'{client.name}, успешно зарегистрировались!')
             if role == 'admin':
                 return redirect('my_services') 
             if role == 'client':

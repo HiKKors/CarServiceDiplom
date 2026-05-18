@@ -1,3 +1,7 @@
+
+import os
+import io
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import ListView, DetailView, View, CreateView
 
@@ -12,12 +16,22 @@ from .filters import ServiceFilterForm
 from django.forms import modelformset_factory
 from django.core.exceptions import ValidationError
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.conf import settings
+from django.http import FileResponse
 
 from django.db import transaction
 
 import datetime
 
 import logging
+
+from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+from django.db import transaction
+from django.db.models import Q
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -100,55 +114,69 @@ def create_booking(request, service_id):
     if request.method == 'POST':
         print('POST', request.POST)
         booking_form = BookingForm(request.POST)
-        booking_equipment = BookingEquipment()
-
+        
         equipments = request.POST.getlist('equipment')  
         booking_form.fields['equipment'].queryset = Equipment.objects.filter(service_id=service_id)
         
         box_id = request.POST.get('box')
         print('box_id:', box_id)
-        box = Box.objects.get(id=box_id)
         
         if booking_form.is_valid():
+            print("МАШИНА ИЗ ФОРМЫ:", booking_form.cleaned_data.get('user_car_id'))
             total_price = calculate_total_booking_price(booking_form.cleaned_data)
             
-            booking = booking_form.save(commit=False)
-            
-            booking.user_id = request.user
-            booking.service_id = AutoService.objects.get(id=service_id)
-            print(booking_form.cleaned_data)
+            try:
+                # Открываем транзакцию: блокируем базу от параллельных записей
+                with transaction.atomic():
+                    box = Box.objects.select_for_update().get(id=box_id)
+                    
+                    booking = booking_form.save(commit=False)
+                    
+                    overlapping_bookings = Booking.objects.filter(
+                        box=box,
+                        date=booking.date,
+                        status__in=['pending', 'active'] 
+                    ).filter(
+                        start_time__lt=booking.end_time,
+                        end_time__gt=booking.start_time
+                    )
+    
+                    if overlapping_bookings.exists():
+                        messages.error(request, 'Извините, это время только что забронировали. Пожалуйста, выберите другой слот.')
+                        return redirect(request.path)
+     
+                    booking.user_id = request.user
+                    booking.service_id = service
+                    booking.box = box
+                    booking.total_price = total_price
+                    booking.user_car = booking_form.cleaned_data.get('user_car_id')
+                    booking.save()
+                    
+                    if len(equipments) > 1:
+                        print(True)
+                        for equipment in equipments:
+                            print(equipment)
+                            BookingEquipment.objects.create(booking_id=booking, equipment_id=Equipment.objects.get(id=equipment))
+                    elif len(equipments) == 1:
+                        print('1')
+                        booking_equipment = BookingEquipment()
+                        booking_equipment.equipment_id = Equipment.objects.get(id=equipments[0])
+                        booking_equipment.booking_id = booking
+                        booking_equipment.save()
 
-            booking.box = box
-            if Booking.objects.filter(date = booking.date, start_time = booking.start_time, end_time = booking.end_time, box = booking.box):
-                print('Ошибка: бокс и время уже занято')
+                return redirect(f'/create-booking/{service_id}/add_booking_detail/{booking.id}')
                 
-            booking.total_price = total_price
-            
-            booking.save()
-            
-            if len(equipments) > 1:
-                print(True)
-                for equipment in equipments:
-                    print(equipment)
-                    BookingEquipment.objects.create(booking_id = booking, equipment_id = Equipment.objects.get(id = equipment))
-            elif len(equipments) == 1:
-                print('1')
-                booking_equipment.equipment_id = Equipment.objects.get(id=equipments[0])
-                booking_equipment.booking_id = booking
-                booking_equipment.save()
-
-            # return redirect('/%2Fadd_booking_detail', booking_id = booking.id)
-            return redirect(f'/create-booking/{service_id}/add_booking_detail/{booking.id}')
+            except Exception as e:
+                logger.error(f"Ошибка при создании брони: {e}")
+                messages.error(request, 'Произошла ошибка при создании брони. Попробуйте еще раз.')
+                return redirect(request.path)
     else:
         booking_form = BookingForm()
         
-        booking_form.fields['user_car_id'].queryset = UserCar.objects.filter(user = request.user)
-        booking_form.fields['box'].queryset = Box.objects.filter(service_id = service_id)
-        # booking_form.fields['box'].name = 'box'
-        
-        booking_form.fields['equipment'].queryset = Equipment.objects.filter(service_id = service_id)
-        # задаем имя оборудования для шаблона
-        # booking_form.fields['equipment'].name = 'equipment'
+        booking_form.fields['user_car_id'].queryset = UserCar.objects.filter(user=request.user)
+        booking_form.fields['box'].queryset = Box.objects.filter(service_id=service_id)
+        booking_form.fields['equipment'].queryset = Equipment.objects.filter(service_id=service_id)
+        booking_form.fields['user_car_id'].queryset = UserCar.objects.filter(user=request.user)
         
         availability_data = None
         selected_date = request.GET.get('date')
@@ -156,19 +184,15 @@ def create_booking(request, service_id):
         if selected_date:
             try:
                 target_date = timezone.datetime.strptime(selected_date, '%Y-%m-%d').date()
-                availability_data = service.get_availability_for_date(target_date)
+                availability_data = service.get_availability_for_date(target_date, service_id)
             except ValueError:
                 pass
-        
-        # print(booking_form.equipment)
-        
     
     return render(request, 'autoService/create-booking.html', {
         'form': booking_form, 
         'service_id': service_id,
         'availability_data': availability_data,
         'selected_date': selected_date or timezone.now().date().isoformat()
-        
     })
     
     
@@ -404,4 +428,6 @@ def add_review(request, service_id):
         'form': form,
         'service': service
     })
+
+
 

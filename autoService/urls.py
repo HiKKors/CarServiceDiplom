@@ -4,7 +4,7 @@ from .client_views import (AllServicesList, ServiceDetail, BookingManagment, Pen
     mark_completed, get_boxes, get_available_times, add_review, create_booking, add_booking_detail, mark_arrived)
 
 from .owner_views import (MyServicesView, MyServiceManagmentView, EditAutoServiceView, AllBookingsView, MyStaffView, MyServicesForStaffView, 
-    add_staff_view, add_auto_service, toggle_box_status, toggle_equipment_status)
+    add_staff_view, add_auto_service, toggle_box_status, toggle_equipment_status, admin_delete_booking, edit_booking, admin_create_booking)
 
 urlpatterns = [
     # CLIENT URLS
@@ -33,4 +33,7 @@ urlpatterns = [
     path('service-admin/services_staff/<int:service>/add', add_staff_view, name='add_staff'),
     path('box/<int:box_id>/toggle/', toggle_box_status, name='toggle_box_status'),
     path('equipment/<int:equipment_id>/toggle/', toggle_equipment_status, name='toggle_equipment_status'),
+    path('delete-booking/<int:booking_id>/', admin_delete_booking, name='admin_delete_booking'),
+    path('booking/<int:booking_id>/edit/', edit_booking, name='edit_booking_admin'),
+    path('service/<int:service_id>/create-booking/', admin_create_booking, name='admin_create_booking'),
 ]

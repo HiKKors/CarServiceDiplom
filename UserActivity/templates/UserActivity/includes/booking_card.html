@@ -54,6 +54,11 @@
                     </form>
 
                 {% elif booking.status == 'active' %}
+                    <div class="session-timer text-center mb-2 badge bg-primary w-100 py-2 fs-6 shadow-sm"
+                         data-end-time="{{ booking.date|date:'Y-m-d' }}T{{ booking.end_time|time:'H:i:s' }}">
+                        <i class="fas fa-clock me-1"></i> <span class="timer-text">Считаем время...</span>
+                    </div>
+
                     <button type="button" 
                             class="btn btn-success w-100 py-2 fw-bold complete-btn" 
                             style="border-radius: 10px;"

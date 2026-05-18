@@ -1,9 +1,8 @@
 from django.http import HttpResponse
-from django.shortcuts import render, redirect
-
-from django.shortcuts import get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.db.models import Sum, Count
+from django.contrib import messages
 
 from datetime import datetime, timedelta
 
@@ -29,8 +28,11 @@ def add_expense_view(request, service):
             
             expense.save()
             return redirect('dashboard', service=service)
+        
+            messages.success(request, 'Расход успешно добавлен')
     else:
         form = AddExpenseForm()
+        messages.error(request, 'Ошибка добавления расхода')
         context = {
             'form': form,
             'service': service,

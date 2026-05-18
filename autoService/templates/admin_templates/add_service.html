@@ -18,6 +18,14 @@
 
 {% block content %}
 <div class="container py-4">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
     <div class="mb-4">
         <h1 class="fw-bold text-dark">Добавление нового автосервиса</h1>
     </div>
@@ -70,11 +78,11 @@
                             <div class="equipment-item row g-2 align-items-end">
                                 <div class="col-md-6">
                                     <label class="small text-muted">Название инструмента</label>
-                                    <input type="text" class="form-control" name="equipment_name" placeholder="Напр: Подъемник">
+                                    <input type="text" class="form-control" name="equipment_name" placeholder="Напр: Подъемник" required>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="small text-muted">Цена (₽/час)</label>
-                                    <input type="number" class="form-control" name="equipment_price" placeholder="0">
+                                    <input type="number" min="0" class="form-control" name="equipment_price" placeholder="0">
                                 </div>
                                 <div class="col-md-2 text-end">
                                     <button type="button" class="btn btn-outline-danger w-100 remove-equipment"><i class="fas fa-trash-alt"></i></button>
@@ -93,11 +101,11 @@
                         <div class="row g-2">
                             <div class="col-6">
                                 <label class="small fw-bold text-muted text-uppercase">Начало</label>
-                                {{ service_form.start_working_time|add_class:"form-control" }}
+                                {{ service_form.start_working_time|add_class:"form-control min=0" }}
                             </div>
                             <div class="col-6">
                                 <label class="small fw-bold text-muted text-uppercase">Конец</label>
-                                {{ service_form.end_working_time|add_class:"form-control" }}
+                                {{ service_form.end_working_time|add_class:"form-control min=0" }}
                             </div>
                         </div>
                     </div>
@@ -106,7 +114,7 @@
                 <div class="card form-card bg-dark text-white p-4 text-center">
                     <h5 class="fw-bold mb-3 text-primary">Инфраструктура</h5>
                     <label class="small fw-bold opacity-75 text-uppercase">Количество боксов</label>
-                    {{ box_form.count|add_class:"form-control form-control-lg border-0 text-center fw-bold bg-secondary text-white" }}
+                    {{ box_form.count|add_class:"form-control form-control-lg border-0 text-center fw-bold bg-secondary text-white min=0" }}
                 </div>
 
                 <div class="card form-card p-3 text-center">
@@ -134,39 +142,45 @@
 
 {% block scripts %}
 <script>
-    // Добавление оборудования (используем простые имена для getlist во вьюхе)
-    document.getElementById('add-equipment').addEventListener('click', () => {
-        const list = document.getElementById('equipment-list');
-        const newItem = document.createElement('div');
-        newItem.className = 'equipment-item row g-2 align-items-end';
-        newItem.innerHTML = `
-            <div class="col-md-6">
-                <label class="small text-muted text-uppercase" style="font-size: 0.7rem;">Название</label>
-                <input type="text" class="form-control" name="equipment_name">
-            </div>
-            <div class="col-md-4">
-                <label class="small text-muted text-uppercase" style="font-size: 0.7rem;">Цена (₽/ч)</label>
-                <input type="number" class="form-control" name="equipment_price">
-            </div>
-            <div class="col-md-2 text-end">
-                <button type="button" class="btn btn-outline-danger w-100 remove-equipment"><i class="fas fa-trash-alt"></i></button>
-            </div>
-        `;
-        list.appendChild(newItem);
-    });
+    document.addEventListener("DOMContentLoaded", function() { 
+        addBtn = document.getElementById('add-equipment');
+    
+        // Добавление оборудования (используем простые имена для getlist во вьюхе)
+        addBtn.addEventListener('click', () => {
+            console.log('была нажата кнопка добавления оборудования')
+            const list = document.getElementById('equipment-list');
+            const newItem = document.createElement('div');
+            newItem.className = 'equipment-item row g-2 align-items-end';
+            newItem.innerHTML = `
+                <div class="col-md-6">
+                    <label class="small text-muted text-uppercase" style="font-size: 0.7rem;">Название</label>
+                    <input type="text" class="form-control" name="equipment_name">
+                </div>
+                <div class="col-md-4">
+                    <label class="small text-muted text-uppercase" style="font-size: 0.7rem;">Цена (₽/ч)</label>
+                    <input type="number" min="0" class="form-control" name="equipment_price">
+                </div>
+                <div class="col-md-2 text-end">
+                    <button type="button" class="btn btn-outline-danger w-100 remove-equipment"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            `;
+            list.appendChild(newItem);
+        });
+    
 
-    // Удаление оборудования
-    document.addEventListener("click", function(e) {
-        if (e.target.closest(".remove-equipment")) {
-            e.target.closest(".equipment-item").remove();
-        }
-    });
+        // Удаление оборудования
+        document.addEventListener("click", function(e) {
+            if (e.target.closest(".remove-equipment")) {
+                e.target.closest(".equipment-item").remove();
+            }
+        });
 
-    // Штрафы
-    document.getElementById('add_penalty').addEventListener('click', function() {
-        const section = document.getElementById('penalty-fields');
-        section.classList.toggle('show');
-        this.innerText = section.classList.contains('show') ? 'Скрыть штрафы' : 'Настроить штрафы';
+        // Штрафы
+        document.getElementById('add_penalty').addEventListener('click', function() {
+            const section = document.getElementById('penalty-fields');
+            section.classList.toggle('show');
+            this.innerText = section.classList.contains('show') ? 'Скрыть штрафы' : 'Настроить штрафы';
+        });
     });
 </script>
 {% endblock %}

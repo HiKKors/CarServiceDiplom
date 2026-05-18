@@ -86,7 +86,6 @@
 
 {% block content %}
 <div class="container-fluid p-0 py-4 px-xl-5">
-
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -94,14 +93,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {% endfor %}
-    {% endif %} 
-    
+    {% endif %}
     <div class="d-flex align-items-center mb-4" style="border-bottom: 2px solid #dee2e6; padding-bottom: 20px;">
-        <a href="{% url 'service' service_id %}" class="btn btn-outline-secondary rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+        <a href="{% url 'all_bookings' %}" class="btn btn-outline-secondary rounded-circle me-3" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
             <i class="fas fa-arrow-left"></i>
         </a>
         <div>
-            <h1 class="h2 mb-0 fw-bold text-dark">Оформление записи</h1>
+            <h1 class="h2 mb-0 fw-bold text-dark">Ручное создание записи</h1>
             <p class="text-muted mb-0 mt-1">Выберите удобное время и укажите детали</p>
         </div>
     </div>
@@ -183,15 +181,21 @@
                 </div>
             </div>
 
-            <div class="col-lg-4">
+            <div class="col-lg-4 p-10">
                 <div class="card shadow-sm border-0" style="border-radius: 15px; position: sticky; top: 20px;">
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-4"><i class="fas fa-clipboard-list text-primary me-2"></i>2. Детали записи</h5>
                         
                         <div class="mb-4">
-                            <label class="form-label text-muted small fw-bold text-uppercase">Ваш автомобиль</label>
-                            {{ form.user_car_id }}
-                            <div class="text-danger small mt-1">{{ form.user_car_id.errors }}</div>
+                            <label class="form-label text-muted small fw-bold text-uppercase">Имя клиента</label>
+                            {{ form.name }}
+                            <div class="text-danger small mt-1">{{ form.name.errors }}</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold text-uppercase">Номер клиента</label>
+                            {{ form.phone_number }}
+                            <div class="text-danger small mt-1">{{ form.name.errors }}</div>
                         </div>
 
                         <div class="mb-4 equipment-list">

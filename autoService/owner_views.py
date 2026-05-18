@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.shortcuts import redirect, render, get_object_or_404
 
 from django.forms import modelformset_factory
@@ -9,10 +10,12 @@ from django.views.generic.detail import DetailView
 # from django.views.generic.edit import DeleteView
 from django.utils.timezone import now
 from django.db.models import Avg
+from django.utils import timezone
 
-from autoService.models import Box, Equipment, AutoService, Booking, Staff
+from autoService.models import BookingEquipment, Box, Equipment, AutoService, Booking, Staff
 from UserActivity.models import Review
-from .forms import AddAutoServiceDataForm, EquipmentFormSet, BoxForm, EquipmentForm, AddStaffForm
+from .forms import AddAutoServiceDataForm, EditBookingForm, EquipmentFormSet, BoxForm, EquipmentForm, AddStaffForm, AdminCreateBookingForm
+from .client_views import calculate_total_booking_price
 
 from .filters import AllBookingsFilterForm
 
@@ -32,54 +35,53 @@ logger = logging.getLogger(__name__)
 def add_auto_service(request):
     user = request.user
     if request.method == 'POST':
+        print('POST')
         auto_service = AutoService()
         box_form = BoxForm(request.POST)
         
         equipment_names = request.POST.getlist('equipment_name')
         equipment_prices = request.POST.getlist('equipment_price')
         
-        print(equipment_names, equipment_prices)
-        
         if box_form.is_valid():
-            # указываем админа
+            # try:
+            print('ФОРМА ВАЛИДНА')
             auto_service.owner = user
             
-            # получаем данные
             service_name = request.POST.get('name')
             service_desc = request.POST.get('description')
             service_address = request.POST.get('address')
             
-            # формируем рабочие часы
             start_day = request.POST.get('start_working_time')
             end_day = request.POST.get('end_working_time')
+            service_working_hours = f"{start_day}-{end_day}"
             
-            service_working_hours = start_day + '-' + end_day
-            
-            # сохраняем в модель
             auto_service.name = service_name
             auto_service.description = service_desc
             auto_service.address = service_address
             auto_service.workingHours = service_working_hours
             
-            # сохраняем в бд
             auto_service.save()
             
             for name, price in zip(equipment_names, equipment_prices):
-                Equipment.objects.create(name = name, price = price, service_id = auto_service)
-
+                if name and price: # Небольшая защита от пустых полей
+                    Equipment.objects.create(name=name, price=price, service_id=auto_service)
             
             box_count = box_form.cleaned_data['count'] 
 
-    
+            # ИСПРАВЛЕНИЕ: Оставил только один цикл создания боксов
             for i in range(1, box_count + 1):
                 Box.objects.create(name=str(i), service_id=auto_service)
-            for i in range(1, box_count + 1):
-                Box.objects.create(name=i, service_id=auto_service)
+            
+            # НОВОЕ: Сообщение об успешном создании
+            messages.success(request, f'Автосервис "{service_name}" успешно создан!')
             return redirect('my_services')
+            
+            
         elif not user.is_admin:
-            messages.error(request=request, message='Клиент не может создавать автосервис')
+            messages.error(request, 'Клиент не может создавать автосервис')
         else:
-            messages.success(request=request, message='Ошибка добавления')
+            print('ОШИБКА СОЗДАНИЯ СЕРВИСА')
+            messages.error(request, 'Ошибка формы. Проверьте правильность введенных данных.')
     else: 
         service_form = AddAutoServiceDataForm()
         equipment_formset = EquipmentFormSet(instance=None)
@@ -132,8 +134,6 @@ class MyServiceManagmentView(DetailView):
         context['rating'] = round(rating['rating'], 1) if rating['rating'] else 0
         
         bookings = Booking.objects.filter(service_id = self.object.id).order_by('date')
-        for book in bookings:
-            print(f'{book.date}, {book.start_time} - {book.end_time}')
         
         return context
 
@@ -183,7 +183,6 @@ class EditAutoServiceView(TemplateView):
         if 'save_autoservice' in request.POST:
             form = AddAutoServiceDataForm(request.POST, instance=auto_service)
             if form.is_valid():
-                # Автоматически собираем workingHours перед сохранением
                 start = form.cleaned_data.get('start_working_time')
                 end = form.cleaned_data.get('end_working_time')
                 auto_service.workingHours = f"{start}-{end}"
@@ -192,7 +191,7 @@ class EditAutoServiceView(TemplateView):
             else:
                 messages.error(request, 'Ошибка в данных автосервиса.')
 
-        # 2. СОХРАНЕНИЕ ОБОРУДОВАНИЯ (Вот тут была главная ошибка)
+        # 2. СОХРАНЕНИЕ ОБОРУДОВАНИЯ
         elif 'save_equipment' in request.POST:
             EquipmentFormSet = modelformset_factory(Equipment, form=EquipmentForm, extra=0, can_delete=True)
             formset = EquipmentFormSet(request.POST, queryset=Equipment.objects.filter(service_id=auto_service))
@@ -200,10 +199,9 @@ class EditAutoServiceView(TemplateView):
             if formset.is_valid():
                 instances = formset.save(commit=False)
                 for instance in instances:
-                    instance.service_id = auto_service # Привязываем к сервису
+                    instance.service_id = auto_service 
                     instance.save()
                 
-                # Обработка удаления (тех, где поставили галочку DELETE)
                 for obj in formset.deleted_objects:
                     obj.delete()
                     
@@ -215,25 +213,25 @@ class EditAutoServiceView(TemplateView):
         elif 'save_box' in request.POST:
             form = BoxForm(request.POST)
             if form.is_valid():
-                new_count = form.cleaned_data['count'] # Используем 'count'
+                new_count = form.cleaned_data['count'] 
                 current_boxes = auto_service.box_set.all().order_by('id')
                 current_count = current_boxes.count()
 
                 if new_count > current_count:
-                    # Создаем новые боксы с красивыми именами (1, 2, 3...)
                     for i in range(current_count + 1, new_count + 1):
                         Box.objects.create(service_id=auto_service, name=str(i))
                 elif new_count < current_count:
-                    # Удаляем лишние с конца
                     to_delete = current_boxes[new_count:]
                     for box in to_delete:
-                        # Логика на 2 шага вперед: проверка на бронирования
                         if box.booking_set.filter(status__in=['pending', 'active']).exists():
                             messages.error(request, f'Нельзя удалить бокс {box.name}, в нем есть активные записи!')
                             return redirect('edit_autoservice', pk=auto_service.id)
                         box.delete()
                 
                 messages.success(request, 'Количество боксов успешно изменено.')
+            else:
+                # НОВОЕ: Обработка ошибки, если форма боксов невалидна
+                messages.error(request, 'Ошибка изменения количества боксов. Проверьте введенное число.')
 
         return redirect('my_service_managment', auto_service.id)
     
@@ -288,7 +286,6 @@ class MyStaffView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['service'] = AutoService.objects.get(id=self.kwargs['service_id'])
-        print(context['staff_list'])
         return context
     
 def add_staff_view(request, service):
@@ -296,7 +293,6 @@ def add_staff_view(request, service):
         form = AddStaffForm(request.POST)
         if form.is_valid():
             service_id = get_object_or_404(AutoService, id=service).id
-            # print('SERVICE', service_id.id)
             staff = form.save(commit=False)
             staff.service = AutoService.objects.get(id=service_id)
             
@@ -306,12 +302,17 @@ def add_staff_view(request, service):
             
             staff.save()
             
+            # НОВОЕ: Сообщение об успешном добавлении
+            messages.success(request, f"Сотрудник {staff.name} {staff.surname} успешно добавлен в штат!")
             return redirect('my_staff', service_id=service_id)
+        else:
+            # НОВОЕ: Обработка невалидной формы
+            messages.error(request, "Ошибка при добавлении сотрудника. Проверьте введенные данные.")
             
     else:
         form = AddStaffForm()
         
-        return render(request, 'admin_templates/add_staff.html', {'form': form, 'service_id': service})
+    return render(request, 'admin_templates/add_staff.html', {'form': form, 'service_id': service})
     
 @login_required
 @require_POST
@@ -352,3 +353,124 @@ def toggle_equipment_status(request, equipment_id):
     messages.success(request, f"Оборудование '{equipment.name}' {status_msg}.")
     
     return redirect('my_service_managment', pk=equipment.service_id.id)
+
+@login_required
+@require_POST
+def admin_delete_booking(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id)
+    
+    # Проверка безопасности: убеждаемся, что админ удаляет бронь СВОЕГО сервиса
+    if booking.service_id.owner != request.user:
+        messages.error(request, "У вас нет прав на изменение этой записи.")
+        return redirect('all_bookings')
+
+    # Меняем статус вместо физического удаления из базы
+    booking.status = 'canceled'
+    booking.save()
+    
+    messages.success(request, f"Запись для {booking.user_id.name} (Бокс №{booking.box.name}) успешно отменена.")
+    
+    # Возвращаемся на ту же страницу, с которой пришли (чтобы сохранить фильтры, если они были)
+    referer = request.META.get('HTTP_REFERER')
+    if referer:
+        return redirect(referer)
+    return redirect('all_bookings')
+
+@login_required
+def edit_booking(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    # Защита: проверяем, что админ редактирует бронь в своем сервисе
+    if booking.service_id.owner != request.user:
+        messages.error(request, "У вас нет прав на редактирование этой записи.")
+        return redirect('all_bookings')
+
+    if request.method == 'POST':
+        # Передаем service_id в форму для фильтрации боксов
+        form = EditBookingForm(request.POST, instance=booking, service_id=booking.service_id.id)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Запись клиента {booking.user_id.name} успешно обновлена!')
+            return redirect('all_bookings')
+        else:
+            messages.error(request, 'Ошибка при сохранении. Проверьте введенные данные.')
+    else:
+        form = EditBookingForm(instance=booking, service_id=booking.service_id.id)
+
+    return render(request, 'admin_templates/edit_booking.html', {
+        'form': form,
+        'booking': booking
+    })
+    
+    
+@login_required
+def admin_create_booking(request, service_id):
+    service = get_object_or_404(AutoService, id=service_id)
+
+    # Защита: только владелец может создавать тут брони
+    if service.owner != request.user:
+        messages.error(request, "У вас нет прав для управления этим сервисом.")
+        return redirect('all_bookings')
+
+    if request.method == 'POST':
+        print('POST')
+        booking_form = AdminCreateBookingForm(request.POST)
+        booking_form.fields['equipment'].queryset = Equipment.objects.filter(service_id=service_id)
+        
+        box_id = request.POST.get('box')
+        equipments = request.POST.getlist('equipment')
+        
+        if booking_form.is_valid():
+            print('valid')
+            try:
+                box = Box.objects.get(id=box_id)
+                booking = booking_form.save(commit=False)
+                
+                # Главное отличие: берем юзера из выбранной машины, а не из request.user
+                booking.service_id = service
+                booking.box = box
+                
+                # Расчет цены (убедись, что функция доступна в этом файле)
+                # booking.total_price = calculate_total_booking_price(booking_form.cleaned_data)
+                
+                # Временная заглушка, если calculate_total_booking_price не импортирована
+                booking.total_price = 1500 
+                booking.handle_booking = True
+
+                booking.save()
+                
+                # Сохраняем оборудование
+                for equip_id in equipments:
+                    equip = Equipment.objects.get(id=equip_id)
+                    BookingEquipment.objects.create(booking_id=booking, equipment_id=equip)
+                    
+                messages.success(request, f'Запись успешно создана!')
+                return redirect('all_bookings')
+                
+            except Exception as e:
+                messages.error(request, f'Ошибка при создании: {e}')
+        else:
+            print(booking_form.errors)
+            messages.error(request, 'Пожалуйста, выберите время и бокс.')
+
+    else:
+        booking_form = AdminCreateBookingForm()
+        booking_form.fields['equipment'].queryset = Equipment.objects.filter(service_id=service_id)
+        
+    # Логика сетки времени (остается без изменений)
+    availability_data = None
+    selected_date = request.GET.get('date')
+    
+    if selected_date:
+        try:
+            target_date = timezone.datetime.strptime(selected_date, '%Y-%m-%d').date()
+            availability_data = service.get_availability_for_date(target_date, service_id)
+        except ValueError:
+            pass
+
+    return render(request, 'admin_templates/admin_create_booking.html', {
+        'form': booking_form, 
+        'service_id': service_id,
+        'availability_data': availability_data,
+        'selected_date': selected_date or timezone.now().date().isoformat()
+    })
