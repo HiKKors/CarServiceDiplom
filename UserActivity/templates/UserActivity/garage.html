@@ -53,36 +53,7 @@
 
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {% for car in user_cars %}
-            {% if car.oil_status %}
-                <div class="mt-4 p-3 bg-light rounded-3 border">
-                    <div class="d-flex justify-content-between align-items-end mb-2">
-                        <div>
-                            <span class="text-muted small fw-bold text-uppercase"><i class="fas fa-oil-can text-primary me-1"></i> Замена масла</span>
-                            {% if car.oil_status.needs_change %}
-                                <div class="text-danger fw-bold small mt-1">Пора менять!</div>
-                            {% else %}
-                                <div class="text-success fw-bold small mt-1">Осталось {{ car.oil_status.remaining_km }} км</div>
-                            {% endif %}
-                        </div>
-                        <div class="text-muted small">
-                            {{ car.oil_status.current_mileage }} / {{ car.oil_status.last_changed_at|add:"10000" }} км
-                        </div>
-                    </div>
-                    
-                    <div class="progress" style="height: 8px; border-radius: 4px;">
-                        <div class="progress-bar 
-                            {% if car.oil_status.needs_change %}bg-danger
-                            {% elif car.oil_status.percentage > 75 %}bg-warning
-                            {% else %}bg-success{% endif %}" 
-                            role="progressbar" 
-                            style="width: {{ car.oil_status.percentage|stringformat:'f'|slice:':-4' }}%;" 
-                            aria-valuenow="{{ car.oil_status.percentage }}" 
-                            aria-valuemin="0" 
-                            aria-valuemax="100">
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
+            
             <div class="col">
                 <div class="card car-card shadow-sm h-100">
                     <div class="card-body p-4">
