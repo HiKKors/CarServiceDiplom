@@ -81,6 +81,12 @@
         cursor: pointer;
         font-weight: 500;
     }
+    .slot-past {
+        background: #e9ecef;
+        color: #adb5bd;
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
 </style>
 {% endblock %}
 
@@ -163,6 +169,8 @@
                                                             <i class="fas fa-check"></i>
                                                         {% elif status == 'busy' %}
                                                             <i class="fas fa-ban"></i>
+                                                        {% elif status == 'past' %}
+                                                            <i class="fas fa-clock"></i>
                                                         {% endif %}
                                                     </td>
                                                     {% endwith %}
@@ -209,6 +217,10 @@
                             <span class="text-muted fw-bold text-uppercase">К оплате:</span>
                             <h3 class="mb-0 text-success fw-bold"><span id="total-price">0</span> ₽</h3>
                         </div>
+
+                        <button type="button" id="reset-slots-btn" class="btn btn-outline-danger fw-bold" style="border-radius: 8px; margin-bottom: 5px;">
+                            <i class="fas fa-undo-alt me-2"></i>Сбросить выбор
+                        </button>
 
                         <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold" style="border-radius: 12px;">
                             <i class="fas fa-check-circle me-2"></i>Забронировать
@@ -347,8 +359,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (priceElement) {
             priceElement.textContent = total.toLocaleString('ru-RU');
         }
-        
-        console.log(`Слотов: ${selectedSlots}, Цена оборудования/час: ${equipmentPricePerHour}, Итого: ${total}`);
     }
 
     // Слушаем клики на всей форме
@@ -368,6 +378,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Запускаем расчет при загрузке
     calculateTotalPrice();
+
+    // === ИСПРАВЛЕННАЯ ЛОГИКА КНОПКИ СБРОСА ===
+    const resetBtn = document.getElementById('reset-slots-btn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            // 1. Снимаем галочки с оборудования
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+
+            // 2. Сбрасываем визуальные слоты и очищаем скрытые инпуты 
+            // (Используем твою же готовую функцию!)
+            clearAllSelection();
+
+            // 3. Обнуляем цену на экране (теперь функция доступна!)
+            calculateTotalPrice();
+        });
+    }
 });
 
 // === Кнопка "Показать доступность" ===
@@ -377,5 +405,36 @@ function showAvailability() {
         window.location.href = `?date=${encodeURIComponent(date)}`;
     }
 }
+
+const resetBtn = document.getElementById('reset-slots-btn');
+    
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+            const form = document.getElementById('booking-form');
+            
+            // 1. Снимаем галочки со всех чекбоксов (и слоты времени, и оборудование)
+            const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.checked = false;
+            });
+
+            // 2. Если у тебя при клике на ячейку (.slot-free) добавлялся какой-то 
+            // визуальный класс (например, .selected, .bg-success или менялся цвет), 
+            // его нужно убрать. 
+            // Вставь сюда те классы, которые ты используешь для выделения!
+            const slots = form.querySelectorAll('.slot-free');
+            slots.forEach(slot => {
+                slot.classList.remove('selected', 'bg-success', 'text-white'); 
+                // если чекбокс визуально менял ячейку, можно принудительно снять выделение
+                slot.style.backgroundColor = ''; 
+                slot.style.color = '';
+            });
+
+            // 3. Запускаем твою функцию перерасчета цены (она обнулит итог)
+            if (typeof calculateTotalPrice === 'function') {
+                calculateTotalPrice();
+            }
+        });
+    }
 </script>
 {% endblock %}
