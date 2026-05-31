@@ -185,6 +185,16 @@ def create_booking(request, service_id):
             try:
                 target_date = timezone.datetime.strptime(selected_date, '%Y-%m-%d').date()
                 availability_data = service.get_availability_for_date(target_date, service_id)
+                
+                if availability_data and target_date:
+                    current_time = timezone.localtime().time()
+                    
+                    for box_id, slots in availability_data.get('table', {}).items():
+                        for slot_str, status in slots.items():
+                            slot_time = datetime.datetime.strptime(slot_str, '%H:%M').time()
+                            
+                            if slot_time <= current_time and status == 'free':
+                                availability_data['table'][box_id][slot_str] = 'past'
             except ValueError:
                 pass
     
